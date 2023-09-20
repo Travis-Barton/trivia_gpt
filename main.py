@@ -176,6 +176,24 @@ def main():
 
     with how_to_use:
         st.title("How to use")
+        st.subheader('How to generate trivia!')
+        with st.expander("Click here to see how to generate trivia"):
+            with open('how to add free form.mp4', 'rb') as f:
+                video = f.read()
+                st.video(video)
+
+        st.subheader('How to bring your own questions!')
+        with st.expander("Click here to see how to bring your own questions"):
+            with open('how to add questions.mp4', 'rb') as f:
+                video = f.read()
+                st.video(video)
+
+        st.subheader('How to play trivia!')
+        with st.expander("Click here to see how to play trivia"):
+            with open('how to play.mp4', 'rb') as f:
+                video = f.read()
+                st.video(video)
+
 
 
 
