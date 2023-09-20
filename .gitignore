@@ -161,3 +161,4 @@ cython_debug/
 #.idea/
 
 /trivia-gpt-backend-firebase.json
+/.streamlit/secrets.toml
