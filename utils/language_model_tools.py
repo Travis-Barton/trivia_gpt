@@ -136,7 +136,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
             result = result.split('}')[0] + '}'
             parsed_result = parser.parse(result)
     except Exception as e:
-        if try_attempts > 3:
+        if try_attempts > 6:
             raise e
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
@@ -166,7 +166,7 @@ def _fix_question(question, answer, category, explanation, previous_questions, r
         result = llm_chain.run(question=question, answer=answer, category=category, explanation=explanation,
                                previous_questions=previous_questions, verbose=True)
     except Exception as e:
-        if run_attempts > 3:
+        if run_attempts > 5:
             raise e
         else:
             return _fix_question(question, answer, category, explanation, previous_questions,
