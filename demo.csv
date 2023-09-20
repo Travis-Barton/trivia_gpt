@@ -1,10 +1,10 @@
-question,answer,category,fact_check,explanation
-What's the powerhouse of the cell?,Mitochondria,science,True,
-What's the chemical symbol for gold?,Au,science,True,
-What's the hardest natural substance?,Diamond,science,True,
-What does CPU stand for?,Central Processing Unit,tech,True,
-Who founded Microsoft?,Bill Gates,tech,True,
-What's the primary programming language for Android development?,Python,tech,False,"The primary programming language for Android development is Kotlin, not Java. While Java used to be the primary language for Android development, it has been replaced by Kotlin as the preferred language by Google. Kotlin is a modern statically typed programming language used by over 60% of professional Android developers."
-Who won the 2020 US Presidential Election?,Joe Biden,news,True,
-Which country first reported COVID-19?,China,news,True,
-Who is the current Prime Minister of the UK?,Boris Johnson,news,False,"The current Prime Minister of the UK is Rishi Sunak, not Boris Johnson. Boris Johnson served as Prime Minister from 2019 to 2022."
+question,answer,category
+What's the powerhouse of the cell?,Mitochondria,science
+What's the chemical symbol for gold?,Au,science
+What's the hardest natural substance?,Diamond,science
+What does CPU stand for?,Central Processing Unit,tech
+Who founded Microsoft?,Bill Gates,tech
+What's the primary programming language for Android development?,Python,tech
+Who won the 2020 US Presidential Election?,Joe Biden,news
+Which country first reported COVID-19?,China,news
+Who is the current Prime Minister of the UK?,Boris Johnson,news
