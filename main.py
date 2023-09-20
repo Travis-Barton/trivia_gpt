@@ -21,6 +21,7 @@ def clear_cache():
     st.session_state.data = pd.DataFrame()
 
 
+
 # In your main coroutine
 async def process_rows():
     tasks = []
@@ -69,7 +70,7 @@ def main():
             mime='text/csv',
         )
         st.write('---')
-        st.title("Try a Demo data set")
+        st.title("Try a Demo Dataset")
         demo = pd.read_csv('demo.csv', index_col=0)
         st.download_button(
             label="Download data as CSV",
@@ -84,7 +85,7 @@ def main():
         with st.sidebar:
             st.title("Settings ⚙️")
             hide_answers = st.checkbox("hide questions", value=False)
-        if st.checkbox('Use Your Own Data'):
+        if st.checkbox('Use Your Own Data', on_change=clear_cache):
             file = st.file_uploader("Upload file", type=["csv"], on_change=clear_cache)
             if file is None:
                 st.stop()
