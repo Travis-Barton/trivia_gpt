@@ -20,6 +20,7 @@ from langchain.chains.openai_functions import (
     create_openai_fn_chain,
     create_structured_output_chain,
 )
+import asyncio
 from langchain.schema import AgentAction, AgentFinish
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
@@ -60,6 +61,50 @@ def get_prompt(section, value):
     except:
         prompts = toml.load('../prompts.toml')
     return prompts[section][value]
+
+
+async def aquestion_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
+                             run_attempts=0, st_status=None) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Uses an OpenAI model to generate a list of questions for each category.
+    :param categories:
+    :return:
+    """
+    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
+    if context:
+        context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
+    else:
+        context = ""
+    system_prompt = get_prompt('question_generation', 'system_prompt')
+    human_prompt = get_prompt('question_generation', 'human_prompt')
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", human_prompt),
+    ])
+    llm_chain = LLMChain(llm=llm, prompt=prompt)
+
+    async def generate_for_category(category):
+        try:
+            st_status.update_status('Generating questions...') if st_status else None
+            result = await llm_chain.arun(categories=[category], question_count=question_count, difficulty=difficulty,
+                                          context=context)
+            return eval(result)
+        except Exception as e:
+            if run_attempts > 10:
+                raise e
+            else:
+                return await question_generator(categories=[category], question_count=question_count, difficulty=difficulty,
+                                                run_attempts=run_attempts + 1)
+        except:
+            result = await llm.predict(
+                f"turn this into valid JSON so that your response can be parsed with python's `eval` function. {result}. This is a last resort, do NOT include any commentary or any warnings or anything else in this response. There should be no newlines or anything else. JUST the JSON.")
+            return eval(result.split('```python')[1].split("```")[0].strip())
+
+    # Execute for all categories in parallel
+    results = await asyncio.gather(*(generate_for_category(cat) for cat in categories))
+
+    # Combine results for all categories
+    return {cat: res for cat, res in zip(categories, results)}
 
 
 def question_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,

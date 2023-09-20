@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses
+from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses, aquestion_generator
 from langchain.callbacks import StreamlitCallbackHandler
 import streamlit_survey as ss
 import asyncio
@@ -93,13 +93,16 @@ def main():
             if st.button("Generate Questions"):
                 with st.status("Preparing data...", expanded=True, state='running') as status:
                     st.write('Generating questions...')
-                    result = question_generator(categories=catagories, question_count=question_count, difficulty=difficulty, st_status=status)
-                    for category, questions in result.items():
-                        _ = pd.json_normalize(questions)
-                        if len(_) > question_count:
-                            _ = _.sample(question_count)
-                        _['category'] = category
-                        st.session_state.data = pd.concat([st.session_state.data, _], axis=0)
+                    result = asyncio.run(aquestion_generator(catagories, question_count, difficulty))
+                    # result = question_generator(categories=catagories, question_count=question_count, difficulty=difficulty, st_status=status)
+                    # for category, questions in result.items():
+                    for _, results in result.items():
+                        for category, questions in results.items():
+                            _ = pd.json_normalize(questions)
+                            if len(_) > question_count:
+                                _ = _.sample(question_count)
+                            _['category'] = category
+                            st.session_state.data = pd.concat([st.session_state.data, _], axis=0)
                     st.session_state.data = st.session_state.data.dropna(how='all')
                     st.session_state.data = st.session_state.data.reset_index(drop=True)
                     st.session_state.data = st.session_state.data[['question', 'answer', 'category']]
