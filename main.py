@@ -85,6 +85,8 @@ def main():
                     result = question_generator(categories=catagories, question_count=question_count, difficulty=difficulty, st_status=status)
                     for category, questions in result.items():
                         _ = pd.json_normalize(questions)
+                        if len(_) > question_count:
+                            _ = _.sample(question_count)
                         _['category'] = category
                         st.session_state.data = pd.concat([st.session_state.data, _], axis=0)
                     st.session_state.data = st.session_state.data.dropna(how='all')
