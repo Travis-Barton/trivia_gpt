@@ -131,7 +131,8 @@ def fact_check_question(question, answer, category, try_attempts=0):
                                     verbose=True)
         try:
             parsed_result = parser.parse(result)
-        except:
+        except Exception as e:
+            print(e)
             result = result.split('}')[0] + '}'
             parsed_result = parser.parse(result)
     except Exception as e:
