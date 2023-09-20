@@ -20,10 +20,13 @@ from langchain.chains.openai_functions import (
     create_openai_fn_chain,
     create_structured_output_chain,
 )
+import asyncio
 from langchain.schema import AgentAction, AgentFinish
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
+from concurrent.futures import ThreadPoolExecutor
+
 
 try:
     os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
@@ -60,6 +63,50 @@ def get_prompt(section, value):
     except:
         prompts = toml.load('../prompts.toml')
     return prompts[section][value]
+
+
+async def aquestion_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
+                             run_attempts=0, st_status=None) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Uses an OpenAI model to generate a list of questions for each category.
+    :param categories:
+    :return:
+    """
+    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
+    if context:
+        context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
+    else:
+        context = ""
+    system_prompt = get_prompt('question_generation', 'system_prompt')
+    human_prompt = get_prompt('question_generation', 'human_prompt')
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", human_prompt),
+    ])
+    llm_chain = LLMChain(llm=llm, prompt=prompt)
+
+    async def generate_for_category(category):
+        try:
+            st_status.update_status('Generating questions...') if st_status else None
+            result = await llm_chain.arun(categories=[category], question_count=question_count, difficulty=difficulty,
+                                          context=context)
+            return eval(result)
+        except Exception as e:
+            if run_attempts > 10:
+                raise e
+            else:
+                return await aquestion_generator(categories=[category], question_count=question_count, difficulty=difficulty,
+                                                 run_attempts=run_attempts + 1)
+        except:
+            result = await llm.apredict(
+                f"turn this into valid JSON so that your response can be parsed with python's `eval` function. {result}. This is a last resort, do NOT include any commentary or any warnings or anything else in this response. There should be no newlines or anything else. JUST the JSON.")
+            return eval(result.split('```python')[1].split("```")[0].strip())
+
+    # Execute for all categories in parallel
+    results = await asyncio.gather(*(generate_for_category(cat) for cat in categories))
+
+    # Combine results for all categories
+    return {cat: res for cat, res in zip(categories, results)}
 
 
 def question_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
@@ -199,6 +246,12 @@ def fact_check_question(question, answer, category, try_attempts=0):
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
 
+async def async_fact_check(question, answer, category):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category)
+    return result
+
 
 def _fix_question(question, answer, category, explanation, previous_questions, run_attempts=0):
     """
@@ -252,6 +305,27 @@ def fix_question(question, answer, category, explanation, previous_questions, ru
         explanation = new_fact_check['explanation']
         k += 1
 
+    return new_fact_check
+
+async def async_fix_question(question, answer, category, explanation, previous_questions, run_attempts=0):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, _fix_question, question, answer, category, explanation, previous_questions, run_attempts)
+    return result
+
+
+async def async_fix_and_check_question(question, answer, category, explanation, previous_questions, run_attempts=0):
+    val = False
+    k = 0
+    while not val and k < 10:
+        new_question = await async_fix_question(question, answer, category, explanation, previous_questions, run_attempts=run_attempts)
+        new_fact_check = await async_fact_check(new_question['question'], new_question['answer'], new_question['category'])
+        val = new_fact_check['fact_check']
+        question = new_fact_check['question']
+        answer = new_fact_check['answer']
+        category = new_fact_check['category']
+        explanation = new_fact_check['explanation']
+        k += 1
     return new_fact_check
 
 
