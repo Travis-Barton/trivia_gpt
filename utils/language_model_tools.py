@@ -108,7 +108,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
     :param category:
     :return:
     """
-    search = BingSearchAPIWrapper(k=20)
+    search = BingSearchAPIWrapper(k=10)
     tools = [
         Tool(
             name="Search",
@@ -117,7 +117,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
         ),
     ]
 
-    llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo-16k')
+    llm = ChatOpenAI(temperature=0, model_name='gpt-4')
     system_message = SystemMessage(content=get_prompt('fact_checking', 'system_prompt'))
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt)
