@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses, aquestion_generator
+from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses, \
+    aquestion_generator, async_fact_check, async_fix_question, async_fix_and_check_question
 from langchain.callbacks import StreamlitCallbackHandler
 import streamlit_survey as ss
 import asyncio
@@ -8,6 +9,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 st.set_page_config(layout="wide")
+
 
 # @st.cache_data
 def convert_df(df):
@@ -18,12 +20,6 @@ def convert_df(df):
 def clear_cache():
     st.session_state.data = pd.DataFrame()
 
-
-async def async_fact_check(question, answer, category):
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor() as pool:
-        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category)
-    return result
 
 # In your main coroutine
 async def process_rows():
@@ -37,6 +33,26 @@ async def process_rows():
 
     return results
 
+
+async def process_and_update_row(i, row):
+    if not row.fact_check:
+        st.write(f'fixing question {i + 1}')
+        result = await async_fix_and_check_question(row.question, row.answer, row.category, row.explanation,
+                                                    st.session_state.data.question.tolist())
+        st.session_state.data.loc[i, 'question'] = result['question']
+        st.session_state.data.loc[i, 'answer'] = result['answer']
+        st.session_state.data.loc[i, 'category'] = result['category']
+        st.session_state.data.loc[i, 'explanation'] = result['explanation']
+        st.session_state.data.loc[i, 'fact_check'] = result['fact_check']
+
+
+async def process_and_update_rows():
+    tasks = []
+
+    for i, row in st.session_state.data.iterrows():
+        tasks.append(process_and_update_row(i, row))
+
+    await asyncio.gather(*tasks)
 
 
 def main():
@@ -148,17 +164,19 @@ def main():
                 replace_button = st.button('AI Fix Answers')
             if replace_button:
                 with st.status("Finding new questions...", expanded=True, state='running') as status:
-                    for i, row in st.session_state.data.iterrows():
-                        if not row.fact_check:
-                            st.write(f'fixing question {i+1}')
-                            response_dict = fix_question(row.question, row.answer, row.category, row.explanation,
-                                                         st.session_state.data.question.tolist())
-                            st.session_state.data.loc[i, 'question'] = response_dict['question']
-                            st.session_state.data.loc[i, 'answer'] = response_dict['answer']
-                            st.session_state.data.loc[i, 'category'] = response_dict['category']
-                            st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
-                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                            # refresh page
+                    # for i, row in st.session_state.data.iterrows():
+                    #     if not row.fact_check:
+                    #         st.write(f'fixing question {i + 1}')
+                    #         response_dict = fix_question(row.question, row.answer, row.category, row.explanation,
+                    #                                      st.session_state.data.question.tolist())
+                    #         st.session_state.data.loc[i, 'question'] = response_dict['question']
+                    #         st.session_state.data.loc[i, 'answer'] = response_dict['answer']
+                    #         st.session_state.data.loc[i, 'category'] = response_dict['category']
+                    #         st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
+                    #         st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
+                    #         # refresh page
+                    # st.experimental_rerun()
+                    asyncio.run(process_and_update_rows())
                     st.experimental_rerun()
 
     with games_tab:
@@ -174,14 +192,15 @@ def main():
                 if st.button('Reset Game'):  # delete self.data_name not in st.session_state: from session state
                     st.session_state.data_name = None
                     st.session_state[survey.data_name] = {}
-                    pages = survey.pages(len(st.session_state.data), on_submit=lambda: grade_responses(survey.to_json()))
+                    pages = survey.pages(len(st.session_state.data),
+                                         on_submit=lambda: grade_responses(survey.to_json()))
             pages = survey.pages(len(st.session_state.data), on_submit=lambda: grade_responses(survey.to_json()))
             with pages:
                 page_count = pages.current
                 question = st.session_state.data.loc[page_count, 'question']
                 answer = st.session_state.data.loc[page_count, 'answer']
                 category = st.session_state.data.loc[page_count, 'category']
-                st.markdown(f"Question {page_count+1}/{len(st.session_state.data)}")
+                st.markdown(f"Question {page_count + 1}/{len(st.session_state.data)}")
                 st.write(st.session_state.data.loc[page_count, 'question'])
                 st.write('---')
                 survey.text_input(label=f"{question} || {answer} || {category}",
@@ -207,8 +226,6 @@ def main():
             with open('how to play.mp4', 'rb') as f:
                 video = f.read()
                 st.video(video)
-
-
 
 
 if __name__ == "__main__":

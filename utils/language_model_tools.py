@@ -25,6 +25,8 @@ from langchain.schema import AgentAction, AgentFinish
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
+from concurrent.futures import ThreadPoolExecutor
+
 
 try:
     os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
@@ -93,10 +95,10 @@ async def aquestion_generator(categories: List[str], question_count: int = 10, d
             if run_attempts > 10:
                 raise e
             else:
-                return await question_generator(categories=[category], question_count=question_count, difficulty=difficulty,
-                                                run_attempts=run_attempts + 1)
+                return await aquestion_generator(categories=[category], question_count=question_count, difficulty=difficulty,
+                                                 run_attempts=run_attempts + 1)
         except:
-            result = await llm.predict(
+            result = await llm.apredict(
                 f"turn this into valid JSON so that your response can be parsed with python's `eval` function. {result}. This is a last resort, do NOT include any commentary or any warnings or anything else in this response. There should be no newlines or anything else. JUST the JSON.")
             return eval(result.split('```python')[1].split("```")[0].strip())
 
@@ -244,6 +246,12 @@ def fact_check_question(question, answer, category, try_attempts=0):
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
 
+async def async_fact_check(question, answer, category):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category)
+    return result
+
 
 def _fix_question(question, answer, category, explanation, previous_questions, run_attempts=0):
     """
@@ -297,6 +305,27 @@ def fix_question(question, answer, category, explanation, previous_questions, ru
         explanation = new_fact_check['explanation']
         k += 1
 
+    return new_fact_check
+
+async def async_fix_question(question, answer, category, explanation, previous_questions, run_attempts=0):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, _fix_question, question, answer, category, explanation, previous_questions, run_attempts)
+    return result
+
+
+async def async_fix_and_check_question(question, answer, category, explanation, previous_questions, run_attempts=0):
+    val = False
+    k = 0
+    while not val and k < 10:
+        new_question = await async_fix_question(question, answer, category, explanation, previous_questions, run_attempts=run_attempts)
+        new_fact_check = await async_fact_check(new_question['question'], new_question['answer'], new_question['category'])
+        val = new_fact_check['fact_check']
+        question = new_fact_check['question']
+        answer = new_fact_check['answer']
+        category = new_fact_check['category']
+        explanation = new_fact_check['explanation']
+        k += 1
     return new_fact_check
 
 
