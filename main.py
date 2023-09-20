@@ -65,7 +65,7 @@ def main():
                             st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
                             st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
         else:
-            catagories = st.text_input("Enter Categories seperated by a comma")
+            catagories = st.text_input("Enter Categories seperated by a comma", on_change=clear_cache)
             catagories = catagories.split(',')
             catagories = [cat.strip() for cat in catagories if cat.strip() != '']
             if len(catagories) > 5:
@@ -73,7 +73,8 @@ def main():
                 catagories = catagories[:5]
             col1, col2 = st.columns(2)
             with col1:
-                question_count = st.number_input("Enter number of questions per category", value=4, max_value=10, min_value=1)
+                question_count = st.number_input("Enter number of questions per category", value=4, max_value=10,
+                                                 min_value=1, on_change=clear_cache)
             with col2:
                 difficulty = st.selectbox("Select Difficulty", ['Hard', 'Medium', 'Easy'])
             if st.session_state.data.empty:
