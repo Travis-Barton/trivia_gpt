@@ -96,7 +96,10 @@ def main():
                     st.session_state.data['fact_check'] = None
                     st.write('Fact checking questions...')
                     for i, row in st.session_state.data.iterrows():
-                        response_dict = fact_check_question(row.question, row.answer, row.category)
+                        try:
+                            response_dict = fact_check_question(row.question, row.answer, row.category)
+                        except:
+                            response_dict = {'fact_check': False, 'explanation': 'error'}
                         status.update(label=f"Fact checking questions... {i+1}/{len(st.session_state.data)}", state='running')
                         if response_dict['fact_check']:
                             st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']

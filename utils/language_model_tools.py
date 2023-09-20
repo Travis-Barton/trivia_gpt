@@ -69,7 +69,7 @@ def question_generator(categories: List[str], question_count: int = 10, difficul
     :param categories:
     :return:
     """
-    llm = ChatOpenAI(temperature=0, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
     if context:
         context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
     else:
@@ -87,7 +87,7 @@ def question_generator(categories: List[str], question_count: int = 10, difficul
         result = llm_chain.run(categories=categories, question_count=question_count, difficulty=difficulty,
                                context=context, verbose=True)
     except Exception as e:
-        if run_attempts > 3:
+        if run_attempts > 10:
             raise e
         else:
             return question_generator(categories=categories, question_count=question_count, difficulty=difficulty,
@@ -117,7 +117,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
         ),
     ]
 
-    llm = ChatOpenAI(temperature=0, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-4')
     system_message = SystemMessage(content=get_prompt('fact_checking', 'system_prompt'))
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt)
@@ -136,7 +136,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
             result = result.split('}')[0] + '}'
             parsed_result = parser.parse(result)
     except Exception as e:
-        if try_attempts > 6:
+        if try_attempts > 10:
             raise e
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
@@ -153,7 +153,7 @@ def _fix_question(question, answer, category, explanation, previous_questions, r
     :param run_attempts:
     :return:
     """
-    llm = ChatOpenAI(temperature=0, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
     system_prompt = get_prompt('question_fixing', 'system_prompt')
     human_prompt = get_prompt('question_fixing', 'human_prompt')
     prompt = ChatPromptTemplate.from_messages([
@@ -166,7 +166,7 @@ def _fix_question(question, answer, category, explanation, previous_questions, r
         result = llm_chain.run(question=question, answer=answer, category=category, explanation=explanation,
                                previous_questions=previous_questions, verbose=True)
     except Exception as e:
-        if run_attempts > 5:
+        if run_attempts > 10:
             raise e
         else:
             return _fix_question(question, answer, category, explanation, previous_questions,
@@ -239,7 +239,7 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
     :param user_answer:
     :return:
     """
-    llm = ChatOpenAI(temperature=0, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-4')
     system_prompt = get_prompt('answer_grading', 'system_prompt')
     human_prompt = get_prompt('answer_grading', 'human_prompt')
     prompt = ChatPromptTemplate.from_messages([
@@ -247,34 +247,6 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
         ("human", human_prompt),
     ]
     )
-    grade_answer_schema = {
-        "title": "Grade Answer Output",
-        "description": "Result of grading the user's answer along with associated data.",
-        "type": "object",
-        "properties": {
-            "question": {
-                "title": "Question",
-                "description": "The original question posed.",
-                "type": "string"
-            },
-            "answer": {
-                "title": "Correct Answer",
-                "description": "The correct answer to the given question.",
-                "type": "string"
-            },
-            "user_answer": {
-                "title": "User's Answer",
-                "description": "The answer provided by the user.",
-                "type": "string"
-            },
-            "correct": {
-                "title": "Correctness Status",
-                "description": "Indicates if the user's answer is correct according to the rules in the system prompt.",
-                "type": "boolean"
-            }
-        },
-        "required": ["question", "answer", "user_answer", "correct"]
-    }
     grade_answer_schema = {
         "title": "Grade Answer Output",
         "description": "Explanation of the grading result followed by the result itself.",
@@ -299,22 +271,11 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
         result = llm_chain.run(question=question, answer=answer, user_answer=user_answer, verbose=True)
         return result
     except Exception as e:
-        if try_attempts > 3:
+        if try_attempts > 10:
             print(f'failed to grade answer: {user_answer} with error: {e}')
             return {
                 'correct': True}  # This cannot fail, so if it does, just return True
-        return _grade_answer(question, answer, user_answer)
-    # try:
-    #     return eval(result)
-    # except:
-    #     try:
-    #         result = llm.predict(
-    #             f"turn this into valid JSON so that your response can be parsed with python's `eval` function. {result}. This is a last resort, do NOT include any commentary or any warnings or anything else in this response. There should be no newlines or anything else. JUST the JSON.")
-    #         print(f'On the path to fail with result: {result}')
-    #         return eval(result.split('```python')[1].split("```")[0].strip())
-    #     except Exception as e:
-    #         print(f'failed to grade answer 2: {user_answer} with error: {e}')
-    #         return {'correct': True}
+        return _grade_answer(question, answer, user_answer, try_attempts=try_attempts + 1)
 
 
 if __name__ == '__main__':
