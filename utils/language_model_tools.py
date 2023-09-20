@@ -117,7 +117,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
         ),
     ]
 
-    llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-3.5-turbo')
     system_message = SystemMessage(content=get_prompt('fact_checking', 'system_prompt'))
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
     agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt)
@@ -125,22 +125,79 @@ def fact_check_question(question, answer, category, try_attempts=0):
     human_prompt = get_prompt('fact_checking', 'human_prompt')
     human_prompt = human_prompt.format(question=question, answer=answer, category=category)
     parser = PydanticOutputParser(pydantic_object=FactCheckQuestion)
+    fact_check_question_schema = {
+        "title": "Fact Check Question",
+        "description": "A model representing a trivia question with a user-provided answer, its category, and a fact check.",
+        "type": "object",
+        "properties": {
+            "question": {
+                "title": "Question",
+                "description": "The trivia question",
+                "type": "string"
+            },
+            "answer": {
+                "title": "User's Answer",
+                "description": "Answer to the trivia question provided by the user",
+                "type": "string"
+            },
+            "category": {
+                "title": "Category",
+                "description": "Category of the question provided by the user",
+                "type": "string"
+            },
+            "fact_check": {
+                "title": "Fact Check Status",
+                "description": "Whether the answer is correct or not",
+                "type": "boolean"
+            },
+            "explanation": {
+                "title": "Explanation",
+                "description": "Comment on the answer provided by the user",
+                "type": "string"
+            }
+        },
+        "required": ["question", "answer", "category", "fact_check", "explanation"]
+    }
     try:
         # result = llm_chain.run(question=question, answer=answer, category=category)
         result = agent_executor.run(input=human_prompt, question=question, answer=answer, category=category,
                                     verbose=True)
+        # Attempt to directly evaluate the result
+        result = result.replace('"fact_check": false,', '"fact_check": False,').replace('"fact_check": true,',
+                                                                                        '"fact_check": True,')
+
         try:
-            parsed_result = parser.parse(result)
-        except Exception as e:
-            print(e)
-            result = result.split('}')[0] + '}'
-            parsed_result = parser.parse(result)
+            result = eval(result)
+            result['question'] = question
+            return result
+        except Exception as first_e:
+            print(first_e)
+
+        # Attempt to parse after trimming the result
+        try:
+            trimmed_result = result.split('}')[0] + '}'
+            trimmed_result = eval(trimmed_result)
+            trimmed_result['question'] = question
+            return trimmed_result
+        except Exception as second_e:
+            print(second_e)
+
+        # If both above attempts fail, use the LLM chain for structured output
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", get_prompt('fact_checking', 'system_prompt')),
+            ("human", 'format the result as JSON {result}')
+        ]
+        )
+        llm_chain = create_structured_output_chain(output_schema=fact_check_question_schema, llm=llm, prompt=prompt, verbose=True)
+        result = llm_chain.run(result=result + '\nThe user submitted: ' + answer, question=question, answer=answer, category=category)
+        result['question'] = question
+        return result
+
     except Exception as e:
         if try_attempts > 10:
             raise e
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
-    return parsed_result.dict()
 
 
 def _fix_question(question, answer, category, explanation, previous_questions, run_attempts=0):
@@ -171,6 +228,7 @@ def _fix_question(question, answer, category, explanation, previous_questions, r
         else:
             return _fix_question(question, answer, category, explanation, previous_questions,
                                  run_attempts=run_attempts + 1)
+    result = result.replace('"fact_check": false,', '"fact_check": False,').replace('"fact_check": true,', '"fact_check": True,')
     try:
         return eval(result)
     except:
@@ -303,7 +361,7 @@ if __name__ == '__main__':
     answer = "Boris Johnson"
     category = "news"
     explanation = "The current Prime Minister of the UK is Rishi Sunak, not Boris Johnson. Boris Johnson served as Prime Minister from 2019 to 2022."
-    result = fix_question(question, answer, category, explanation)
+    result = fix_question(question, answer, category, explanation, previous_questions=['who is the current president of the US?'])
     print(result)
 
     question = "Who is the current Prime Minister of the UK?"
