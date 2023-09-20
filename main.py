@@ -3,6 +3,10 @@ import pandas as pd
 from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses
 from langchain.callbacks import StreamlitCallbackHandler
 import streamlit_survey as ss
+import asyncio
+import json
+from concurrent.futures import ThreadPoolExecutor
+
 st.set_page_config(layout="wide")
 
 # @st.cache_data
@@ -13,6 +17,26 @@ def convert_df(df):
 
 def clear_cache():
     st.session_state.data = pd.DataFrame()
+
+
+async def async_fact_check(question, answer, category):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category)
+    return result
+
+# In your main coroutine
+async def process_rows():
+    tasks = []
+
+    for i, row in st.session_state.data.iterrows():
+        tasks.append(async_fact_check(row.question, row.answer, row.category))
+
+    # Gather results from all tasks
+    results = await asyncio.gather(*tasks)
+
+    return results
+
 
 
 def main():
@@ -50,20 +74,6 @@ def main():
                 st.stop()
             if (st.session_state.data.empty):
                 st.session_state.data = pd.read_csv(file, index_col=False)
-
-            with st.sidebar:
-                fact_check_button = st.button("Run AI Fact-Check")
-            if fact_check_button:
-                with st.status("Fact checking questions...", expanded=True, state='running') as status:
-                    for i, row in st.session_state.data.iterrows():
-                        response_dict = fact_check_question(row.question, row.answer, row.category)
-                        status.update(label=f"Fact checking questions... {i+1}/{len(st.session_state.data)}", state='running')
-                        if response_dict['fact_check']:
-                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                            st.session_state.data.loc[i, 'explanation'] = ""
-                        else:
-                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                            st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
         else:
             catagories = st.text_input("Enter Categories seperated by a comma", on_change=clear_cache)
             catagories = catagories.split(',')
@@ -94,23 +104,24 @@ def main():
                     st.session_state.data = st.session_state.data.reset_index(drop=True)
                     st.session_state.data = st.session_state.data[['question', 'answer', 'category']]
                     st.session_state.data['fact_check'] = None
-                    st.write('Fact checking questions...')
-                    for i, row in st.session_state.data.iterrows():
-                        try:
-                            response_dict = fact_check_question(row.question, row.answer, row.category)
-                        except:
-                            response_dict = {'fact_check': False, 'explanation': 'error'}
-                        status.update(label=f"Fact checking questions... {i+1}/{len(st.session_state.data)}", state='running')
-                        if response_dict['fact_check']:
-                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                            st.session_state.data.loc[i, 'explanation'] = ""
-                        else:
-                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                            st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
             else:
                 print(st.session_state.data)
 
-
+        with st.sidebar:
+            fact_check_button = st.button("Run AI Fact-Check")
+        if fact_check_button:
+            with st.status("Fact checking questions...", expanded=True, state='running') as status:
+                result = asyncio.run(process_rows())
+                for i, row in st.session_state.data.iterrows():
+                    response_dict = [res for res in result if res['question'] == row.question][0]
+                    status.update(label=f"Fact checking questions... {i + 1}/{len(st.session_state.data)}",
+                                  state='running')
+                    if response_dict['fact_check']:
+                        st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
+                        st.session_state.data.loc[i, 'explanation'] = ""
+                    else:
+                        st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
+                        st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
         if ('fact_check' in st.session_state.data.columns) and any(st.session_state.data.fact_check == False):
             st.warning("Some questions failed fact checking. Please review the questions and answers.")
         if hide_answers:
