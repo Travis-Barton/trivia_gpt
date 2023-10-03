@@ -5,9 +5,7 @@ from datetime import datetime
 from models.componants import Question, Answer
 
 # Firebase Initialization
-cred = credentials.Certificate("trivia-gpt-db.json")
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+
 db = firestore.client()
 def main():
     st.set_page_config(layout="wide")
