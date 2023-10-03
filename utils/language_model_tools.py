@@ -26,16 +26,28 @@ from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
 from concurrent.futures import ThreadPoolExecutor
+import os
 
+import os
+import toml
 
+# Determine the base directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the secrets.toml file
+SECRETS_PATH = os.path.join(BASE_DIR, '..', '.streamlit', 'secrets.toml')
+
+# Load the secrets from the file
+toml_secrets = toml.load(SECRETS_PATH)
 try:
-    os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
-    os.environ['OPENAI_API_KEY'] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['OPENAI_API_KEY']
+    toml_secrets = toml.load(SECRETS_PATH)
+    os.environ["BING_SUBSCRIPTION_KEY"] = toml_secrets['llm_api_keys']['BING_SEARCH_API']
+    os.environ['OPENAI_API_KEY'] = toml_secrets['llm_api_keys']['OPENAI_API_KEY']
     os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
-except:
-    os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('../.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
-    os.environ['OPENAI_API_KEY'] = toml.load('../.streamlit/secrets.toml')['llm_api_keys']['OPENAI_API_KEY']
-    os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
+except FileNotFoundError:
+    print(f"Could not find the secrets file at: {SECRETS_PATH}")
+    # You can either exit the program or fall back to other methods for obtaining secrets
+    # For now, we'll just print the error. You can decide what action to take.
 
 
 class Question(BaseModel):
@@ -406,7 +418,7 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
         if try_attempts > 10:
             print(f'failed to grade answer: {user_answer} with error: {e}')
             return {
-                'correct': True}  # This cannot fail, so if it does, just return True
+                'grade': True}  # This cannot fail, so if it does, just return True
         return _grade_answer(question, answer, user_answer, try_attempts=try_attempts + 1)
 
 

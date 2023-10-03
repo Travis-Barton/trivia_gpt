@@ -4,12 +4,11 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import uuid
 from datetime import datetime
+from models.componants import Question, Answer, Game
+from utils.firebase_tools import get_db
 
-# Firebase Initialization
-cred = credentials.Certificate("trivia-gpt-db.json")
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
+db = get_db()
+
 
 def invert_question_status(question_id):
     question_ref = db.collection(u'questions').document(question_id)
@@ -18,6 +17,30 @@ def invert_question_status(question_id):
         'revealed': not question['revealed'],
         'modified_at': datetime.now()
     })
+
+
+def handle_change(updated_board):
+    # The function logic to handle changes can be placed here.
+    for team in updated_board.columns:
+        for question_text in updated_board.index:
+            question_id = get_question_id_from_text(question_text, db.collection(u'questions'))
+            if updated_board[team][question_text] != st.session_state.board_value[team][question_text]:
+                update_answer(question_id, team, updated_board[team][question_text])
+
+
+def get_question_id_from_text(question_text, questions_ref):
+    # This can be optimized if you can cache these values or if there's a better way to retrieve them
+    return questions_ref.where(u'question', u'==', question_text).get()[0].id
+
+
+def update_answer(question_id, team, new_value):
+    answer_ref = db.collection(u'answers').where(u'question_id', u'==', question_id).where(u'user_id', u'==', team).get()
+    if answer_ref:
+        answer_ref = answer_ref[0].id
+        db.collection(u'answers').document(answer_ref).update({
+            'correct': new_value
+        })
+
 
 def main():
     st.set_page_config(layout="wide")
@@ -53,7 +76,7 @@ def main():
                     'revealed': False,
                     'created_at': datetime.now(),
                     'modified_at': datetime.now(),
-                    'correct': False,
+                    # 'correct': False,
                     'order': idx,
                 })
 
@@ -64,6 +87,7 @@ def main():
                 'user_ids': [],
                 'question_ids': question_ids,
                 'show_answers': False,
+                'created_at': datetime.now(),
             })
             st.write(f'Game {game_id} Started')
 
@@ -107,23 +131,36 @@ def main():
         game_ref = db.collection(u'games').document(st.session_state.game_id)
     st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
 
+    game_leaderboards, edit_player_scores = st.tabs(['Leaderboards', 'Edit Player Scores'])
     # Update the database based on the checkbox state
     game_ref = db.collection(u'games').document(st.session_state.game_id)
     game_ref.update({
         'show_answers': st.session_state.show_answers
     })
+    check_all_answers_graded = Game.check_all_answers_graded(st.session_state.game_id)
+    if check_all_answers_graded:
+        st.success('All answers have been graded!')
+    else:
+        st.warning('Not all answers have been graded yet.')
+    with game_leaderboards:
+        leaderboard = Game.get_leaderboard(st.session_state.game_id)
+        st.dataframe(leaderboard, width=600)
+    with edit_player_scores:
+        game = game_ref.get().to_dict()
+        user_ids = game['user_ids']
+        col1, col2 = st.columns(2)
+        with col1:
+            st.json(Game.get_user_answers(st.session_state.game_id))
+        with col2:
+            st.markdown('**Edit Player Scores**\n(not currently functional)')
+            if 'board_value' not in st.session_state:
+                st.session_state.board_value = Game.get_scoreboard(st.session_state.game_id)
+            board = Game.get_scoreboard(st.session_state.game_id)
 
-    game = game_ref.get().to_dict()
-    user_ids = game['user_ids']
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('**Participants**')
-        for user_id in user_ids:
-            st.write(user_id)
-    with col2:
-        st.markdown('**Leaderboard**')
-        pass  # pass for now
-    # You'd need to retrieve and display data based on your game and response structure
+            new_board = st.data_editor(board, use_container_width=True)
+            if new_board.to_json() != board.to_json():
+                handle_change(new_board)
+                st.session_state.board_value = new_board
 
 
 main()

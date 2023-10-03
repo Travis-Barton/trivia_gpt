@@ -2,15 +2,17 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
+from models.componants import Question, Answer
 
 # Firebase Initialization
 cred = credentials.Certificate("trivia-gpt-db.json")
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
-
 def main():
     st.set_page_config(layout="wide")
+    if st.button('Refresh Page'):
+        st.experimental_rerun()
 
     # Session states
     if 'user_id' not in st.session_state:
@@ -64,9 +66,10 @@ def main():
     if not answered_already:
         user_answer = st.text_input(f"Your answer for: {latest_question['question']}",
                                     key=f"answer_{latest_question_id}",
-                                    placeholder="Enter your answer here...")
+                                    placeholder="Enter your answer here...",
+                                    label_visibility='hidden')
 
-        if st.button(f"Submit Answer for {latest_question['question']}", key=f"btn_{latest_question_id}"):
+        if st.button(f"Submit Your Final Answer", key=f"btn_{latest_question_id}"):
             if user_answer:
                 answer_ref = db.collection(u'answers').add({
                     'user_id': st.session_state.user_id,
@@ -83,6 +86,27 @@ def main():
                 st.warning("Please enter an answer before submitting.")
     else:
         st.info(f"You answered the question: \`{latest_question['question']}\` with: \`{answered_already[0].to_dict()['answer']}\`")
+
+    # list all of their answers if any if answers have been revealed
+    if game['show_answers']:
+        st.markdown(f'Answers for {st.session_state.user_id}')
+        answers_ref = db.collection(u'answers').where(u'user_id', u'==', st.session_state.user_id).where(
+            u'game_id', u'==', st.session_state.game_id).stream()
+        questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).stream()
+        questions = {doc.id: doc.to_dict() for doc in questions_ref}
+        answers = {doc.id: doc.to_dict() for doc in answers_ref}
+        for question_id, question_data in questions.items():
+            if question_data['revealed']:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f'**{question_data["question"]}**')
+                associated_answer = next((answer_data for answer_id, answer_data in answers.items() if
+                                          answer_data.get('question_id') == question_id), None)
+                with col2:
+                    if associated_answer:
+                        st.markdown(f'*{associated_answer["answer"]}*')
+                    else:
+                        st.markdown(f'*No Answer*')
 
 
 main()
