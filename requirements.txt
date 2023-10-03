@@ -1,7 +1,7 @@
 firebase-admin
 pandas
 langchain~=0.0.295
-streamlit
+streamlit>=1.27.1
 openai
 toml
 streamlit-survey
