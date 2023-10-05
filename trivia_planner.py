@@ -100,19 +100,24 @@ def main():
             if len(catagories) > 5:
                 st.warning('catagories are currently limited to 5')
                 catagories = catagories[:5]
-            col1, col2 = st.columns(2)
+            col1, col2, col_3 = st.columns(3)
             with col1:
                 question_count = st.number_input("Enter number of questions per category", value=4, max_value=10,
                                                  min_value=1, on_change=clear_cache)
             with col2:
                 difficulty = st.selectbox("Select Difficulty", ['Hard', 'Medium', 'Easy'])
+            with col_3:
+                temperature = st.selectbox("Select a Randomness", ["Strict", "Slightly Random", "Vary Random"])
+                if temperature in ['Slightly Random', 'Vary Random']:
+                    st.info('Increasing the randomness will increase the change of wrong answers. Always use the AI fact check to verify these answers.')
+                temperature = 0 if temperature == 'Strict' else 0.8 if temperature == 'Slightly Random' else 1.2
             if st.session_state.data.empty:
                 st.session_state.data = pd.read_csv('template.csv')
             cols = st.columns(2)
             if st.button("Generate Questions"):
                 with st.status("Preparing data...", expanded=True, state='running') as status:
                     st.write('Generating questions...')
-                    result = asyncio.run(aquestion_generator(catagories, question_count, difficulty))
+                    result = asyncio.run(aquestion_generator(catagories, question_count, difficulty, temperature=temperature))
                     # result = question_generator(categories=catagories, question_count=question_count, difficulty=difficulty, st_status=status)
                     # for category, questions in result.items():
                     for _, results in result.items():
