@@ -26,8 +26,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
 from concurrent.futures import ThreadPoolExecutor
-import os
-
+from langchain.tools import WikipediaQueryRun
+from langchain.utilities import WikipediaAPIWrapper
 import os
 import toml
 
@@ -78,13 +78,13 @@ def get_prompt(section, value):
 
 
 async def aquestion_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
-                             run_attempts=0, st_status=None) -> Dict[str, List[Dict[str, str]]]:
+                             run_attempts=0, st_status=None, temperature=0) -> Dict[str, List[Dict[str, str]]]:
     """
     Uses an OpenAI model to generate a list of questions for each category.
     :param categories:
     :return:
     """
-    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=temperature + float(run_attempts)/10, model_name='gpt-4')
     if context:
         context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
     else:
@@ -174,6 +174,11 @@ def fact_check_question(question, answer, category, try_attempts=0):
             func=search.run,
             description="useful for when you need to answer questions about current events. You should ask targeted questions",
         ),
+        Tool(
+            name="Wikipedia",
+            func=WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()).run,
+            description='Usefil for when you want to use keywords to pull up the wikipedia page for a topic.'
+        )
     ]
 
     llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-3.5-turbo')
@@ -313,7 +318,7 @@ def fix_question(question, answer, category, explanation, previous_questions, ru
         val = new_fact_check['fact_check']
         question = new_fact_check['question']
         answer = new_fact_check['answer']
-        category = new_fact_check['category']
+        category = category
         explanation = new_fact_check['explanation']
         k += 1
 
