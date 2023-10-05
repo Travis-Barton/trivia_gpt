@@ -68,6 +68,7 @@ def main():
             data=convert_df(df),
             file_name='questions_template.csv',
             mime='text/csv',
+            key='template'
         )
         st.write('---')
         st.title("Try a Demo Dataset")
@@ -77,6 +78,7 @@ def main():
             data=convert_df(demo),
             file_name='questions_template.csv',
             mime='text/csv',
+            key='demo'
         )
         st.write('---')
     question_tab, games_tab, how_to_use = st.tabs(["Questions", "Games", "How to use"])
@@ -124,6 +126,19 @@ def main():
                     st.session_state.data = st.session_state.data.reset_index(drop=True)
                     st.session_state.data = st.session_state.data[['question', 'answer', 'category']]
                     st.session_state.data['fact_check'] = None
+                    st.write("Fact checking questions...")
+                    result = asyncio.run(process_rows())
+                    for i, row in st.session_state.data.iterrows():
+                        response_dict = [res for res in result if res['question'] == row.question][0]
+                        status.update(label=f"Fact checking questions... {i + 1}/{len(st.session_state.data)}",
+                                      state='running')
+                        if response_dict['fact_check']:
+                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
+                            st.session_state.data.loc[i, 'explanation'] = ""
+                        else:
+                            st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
+                            st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
+
             else:
                 print(st.session_state.data)
 
@@ -149,9 +164,9 @@ def main():
             temp_data['answer'] = 'xxx'
             temp_data['question'] = 'xxx'
             temp_data['explanation'] = 'xxx'
-            st.dataframe(temp_data)
+            st.dataframe(temp_data, hide_index=True)
         else:
-            st.session_state.data = st.data_editor(st.session_state.data, use_container_width=True)
+            st.session_state.data = st.data_editor(st.session_state.data, use_container_width=True, hide_index=True)
         col1, col2 = st.columns(2)
         with col1:
             st.download_button(
@@ -165,18 +180,6 @@ def main():
                 replace_button = st.button('AI Fix Answers')
             if replace_button:
                 with st.status("Finding new questions...", expanded=True, state='running') as status:
-                    # for i, row in st.session_state.data.iterrows():
-                    #     if not row.fact_check:
-                    #         st.write(f'fixing question {i + 1}')
-                    #         response_dict = fix_question(row.question, row.answer, row.category, row.explanation,
-                    #                                      st.session_state.data.question.tolist())
-                    #         st.session_state.data.loc[i, 'question'] = response_dict['question']
-                    #         st.session_state.data.loc[i, 'answer'] = response_dict['answer']
-                    #         st.session_state.data.loc[i, 'category'] = response_dict['category']
-                    #         st.session_state.data.loc[i, 'explanation'] = response_dict['explanation']
-                    #         st.session_state.data.loc[i, 'fact_check'] = response_dict['fact_check']
-                    #         # refresh page
-                    # st.experimental_rerun()
                     asyncio.run(process_and_update_rows())
                     st.experimental_rerun()
 
