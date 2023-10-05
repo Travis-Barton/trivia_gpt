@@ -6,8 +6,49 @@ import uuid
 from datetime import datetime
 from models.componants import Question, Answer, Game
 from utils.firebase_tools import get_db
-
+import string
+import random as rd
 db = get_db()
+
+
+ANIMALS = [
+    "Bat", "Bee", "Boar", "Cat", "Dog", "Elk", "Fox", "Goat", "Hen", "Koi",
+    "Lion", "Moth", "Owl", "Pig", "Rat", "Toad", "Wolf", "Yak", "Zebu", "Crow",
+    "Bear", "Mule", "Lynx", "Eel", "Crab", "Dove", "Frog", "Goose", "Hare", "Jay",
+    "Kiwi", "Lemur", "Mink", "Newt", "Orca", "Puma", "Dolphin", "Rhea", "Seal", "Tuna",
+    "Shark", "Vole", "Wasp", "Emu", "Yabby", "Zorse", "Eagle", "Finch", "Guppy", "Puppy"
+]
+BEER_TYPES = [
+    "Ale", "Lager", "Stout", "Malt", "Porter", "Pilsner", "Bock", "Wheat", "Sour", "Amber",
+    "Blonde", "Brown", "Cream", "Dark", "Dunkel", "Fruit", "Golden", "Honey", "India Pale", "Light",
+    "Mead", "Mild", "Old", "Pale", "Red", "Rye", "Scotch", "Strong", "Tripel", "Vienna",
+    "Barleywine", "Berliner", "Seltzer", "Black", "Brett", "Double", "Dry", "Dubbel", "Eisbock", "Gose",
+    "Helles", "Kolsch", "Lambic", "Marzen", "Oatmeal", "Quadrupel", "Rauchbier", "Saison", "Trappist", "Witbier"
+]
+
+def generate_3_digit_code():
+    choices = string.digits
+    return ''.join(rd.choice(choices) for _ in range(3))
+
+
+def check_combination_exists(combination):
+    games_ref = db.collection('games')
+    # Query for the specific combination
+    results = games_ref.where('game_id', '==', combination).limit(1).get()
+
+    # If any results are returned, the combination exists
+    return len(results) > 0
+
+
+def generate_game_id():
+    animal = rd.choice(ANIMALS)
+    beer = rd.choice(BEER_TYPES)
+    code = generate_3_digit_code()
+    combination = f"{animal}{beer}{code}"
+
+    if check_combination_exists(combination):
+        return generate_game_id()
+    return combination
 
 
 def invert_question_status(question_id):
@@ -61,7 +102,7 @@ def main():
             elif 'xlsx' in data_upload.type:
                 df = pd.read_excel(data_upload)
 
-            game_id = str(uuid.uuid4())
+            game_id = generate_game_id()
             st.session_state.game_id = game_id
             # Iteratively add questions and keep track of their IDs
             for idx, row in df.iterrows():
