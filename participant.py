@@ -45,6 +45,7 @@ async def watch(previous_open_question):
             previous_open_question = current_open_question
 
         # Display current time for debugging purpose
+
         await asyncio.sleep(10)  # Sleep for 10 seconds
 
 def main():
@@ -133,7 +134,7 @@ def main():
                         st.markdown(f'*{associated_answer["answer"]}*')
                     else:
                         st.markdown(f'*No Answer*')
-    asyncio.run(watch(open_questions))
+    # asyncio.run(watch(open_questions))
 
 
 main()
