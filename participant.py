@@ -1,15 +1,55 @@
+import time
+import asyncio
+
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 from models.componants import Question, Answer
 
+db = firestore.client()
+
 # Firebase Initialization
 
-db = firestore.client()
+
+def get_open_questions():
+    game_ref = db.collection(u'games').document(st.session_state.game_id)
+    game = game_ref.get().to_dict()
+    if st.session_state.user_id not in game['user_ids']:
+        game_ref.update({
+            'user_ids': firestore.ArrayUnion([st.session_state.user_id])
+        })
+
+    # Display Open Questions
+    # Fetch all questions for the game without sorting
+    questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).where(u'revealed',
+                                                                                                         u'==',
+                                                                                                         True).stream()
+    return {doc.id: doc.to_dict() for doc in questions_ref}, game
+
+
+async def watch(previous_open_question):
+    while True:
+        # Fetch the open questions
+        open_questions, _ = get_open_questions()
+
+        if open_questions:
+            # Assuming only one open question can exist at a time
+            current_question_id = max(open_questions.keys(), key=lambda q_id: open_questions[q_id]['order'])
+            current_open_question = open_questions[current_question_id]['question']
+
+            # If the open question has changed from the previous iteration
+            if previous_open_question and current_open_question != previous_open_question:
+                st.experimental_rerun()  # Refresh the page
+
+            previous_open_question = current_open_question
+
+        # Display current time for debugging purpose
+        await asyncio.sleep(10)  # Sleep for 10 seconds
+
 def main():
     st.set_page_config(layout="wide")
-    if st.button('Refresh Page'):
+    if st.button('Get Next Question'):
         st.experimental_rerun()
 
     # Session states
@@ -34,19 +74,7 @@ def main():
         st.warning("Please enter a valid Game ID to join the game.")
         st.stop()
 
-    game_ref = db.collection(u'games').document(st.session_state.game_id)
-    game = game_ref.get().to_dict()
-    if st.session_state.user_id not in game['user_ids']:
-        game_ref.update({
-            'user_ids': firestore.ArrayUnion([st.session_state.user_id])
-        })
-
-    # Display Open Questions
-    # Fetch all questions for the game without sorting
-    questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).where(u'revealed',
-                                                                                                         u'==',
-                                                                                                         True).stream()
-    open_questions = {doc.id: doc.to_dict() for doc in questions_ref}
+    open_questions, game = get_open_questions()
 
     if not open_questions:
         st.info("Waiting for questions...")
@@ -105,6 +133,7 @@ def main():
                         st.markdown(f'*{associated_answer["answer"]}*')
                     else:
                         st.markdown(f'*No Answer*')
+    asyncio.run(watch(open_questions))
 
 
 main()
