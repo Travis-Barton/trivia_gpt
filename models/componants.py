@@ -205,7 +205,8 @@ class Game:
         answers = {doc.id: doc.to_dict() for doc in answers_ref}
         scores = {}
         team_names = list(set([ans['user_id'] for ans in answers.values()]))
-        questions_list = list(set([ques['question'] for ques in questions.values()]))
+        sorted_questions = sorted(questions.values(), key=lambda q: q['order'])
+        questions_list = [ques['question'] for ques in sorted_questions]
         data = pd.DataFrame(index=questions_list, columns=team_names)
         data.fillna(False, inplace=True)
         for answer_id, answer in answers.items():
