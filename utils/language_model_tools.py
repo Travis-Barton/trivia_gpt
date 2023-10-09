@@ -31,7 +31,6 @@ from langchain.utilities import WikipediaAPIWrapper
 import os
 import toml
 
-# Determine the base directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the path to the secrets.toml file
@@ -48,6 +47,11 @@ except FileNotFoundError:
     print(f"Could not find the secrets file at: {SECRETS_PATH}")
     # You can either exit the program or fall back to other methods for obtaining secrets
     # For now, we'll just print the error. You can decide what action to take.
+
+os.environ['LANGCHAIN_TRACING_V2'] = 'true'
+os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
+os.environ['LANGCHAIN_API_KEY'] = toml_secrets['langsmith_api']['langsmith_api']
+os.environ['LANGCHAIN_PROJECT'] = 'trivia-gpt'
 
 
 class Question(BaseModel):
