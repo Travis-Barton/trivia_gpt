@@ -19,4 +19,4 @@ with col3:
         url='https://trivia-gpt-participant.streamlit.app/')
 
 
-st.markdown('Brought to you by [Travis Barton Consulting](travisbarton.com)')
+st.markdown('Brought to you by [Travis Barton Consulting](https://www.travisbarton.com)')
