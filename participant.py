@@ -9,7 +9,7 @@ from models.componants import Question, Answer
 db = firestore.client()
 def main():
     st.set_page_config(layout="wide")
-    if st.button('Refresh Page'):
+    if st.button('Fetch New Question'):
         st.experimental_rerun()
 
     # Session states
