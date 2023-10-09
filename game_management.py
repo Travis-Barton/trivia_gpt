@@ -60,28 +60,38 @@ def invert_question_status(question_id):
     })
 
 
-def handle_change(updated_board):
-    # The function logic to handle changes can be placed here.
+def sync_with_firestore(updated_board, old_board):
+    if not st.session_state.get("initialized"):
+        st.session_state.initialized = True
+        st.session_state.old_board = old_board
+
+    # Check for changes before invoking the comparison function
+    if not updated_board.equals(old_board):
+        handle_change(updated_board, old_board)
+        st.session_state.old_board = updated_board.copy()
+
+
+def handle_change(updated_board, old_board):
     for team in updated_board.columns:
         for question_text in updated_board.index:
-            question_id = get_question_id_from_text(question_text, db.collection(u'questions'))
-            if updated_board[team][question_text] != st.session_state.board_value[team][question_text]:
-                update_answer(question_id, team, updated_board[team][question_text])
+            question_id = get_question_id_from_text(question_text)
+            if updated_board.loc[question_text, team] != old_board.loc[question_text, team]:
+                update_answer(question_id, team, updated_board.loc[question_text, team])
 
 
-def get_question_id_from_text(question_text, questions_ref):
-    # This can be optimized if you can cache these values or if there's a better way to retrieve them
-    return questions_ref.where(u'question', u'==', question_text).get()[0].id
+def get_question_id_from_text(question_text):
+    questions_ref = db.collection(u'questions')
+    return questions_ref.where(u'question', u'==', question_text).where(u'game_id', u'==', st.session_state.game_id).get()[0].id
 
 
 def update_answer(question_id, team, new_value):
-    answer_ref = db.collection(u'answers').where(u'question_id', u'==', question_id).where(u'user_id', u'==', team).get()
-    if answer_ref:
-        answer_ref = answer_ref[0].id
-        db.collection(u'answers').document(answer_ref).update({
-            'correct': new_value
+    answers_ref = db.collection(u'answers')
+    answer_query = answers_ref.where(u'question_id', u'==', question_id).where(u'user_id', u'==', team).get()
+    if answer_query:
+        answer_id = answer_query[0].id
+        answers_ref.document(answer_id).update({
+            'correct': bool(new_value)
         })
-
 
 def main():
     st.set_page_config(layout="wide")
@@ -193,15 +203,19 @@ def main():
         with col1:
             st.json(Game.get_user_answers(st.session_state.game_id))
         with col2:
-            st.markdown('**Edit Player Scores**\n(not currently functional)')
+            st.markdown('**Edit Player Scores**')
+            # Initial load of the scoreboard into session state if it doesn't exist
             if 'board_value' not in st.session_state:
                 st.session_state.board_value = Game.get_scoreboard(st.session_state.game_id)
+            # Update the session state board to include any new participants
+            for participant in user_ids:
+                if participant not in st.session_state.board_value.columns:
+                    st.session_state.board_value[participant] = False
+            # Get the latest board from the game
             board = Game.get_scoreboard(st.session_state.game_id)
-
-            new_board = st.data_editor(board, use_container_width=True)
-            if new_board.to_json() != board.to_json():
-                handle_change(new_board)
-                st.session_state.board_value = new_board
-
+            # Show the data editor for the board and capture any modifications
+            new_board = st.data_editor(st.session_state.board_value, use_container_width=True)
+            # Use the `sync_with_firestore` function to manage board changes and session state
+            sync_with_firestore(new_board, board)
 
 main()
