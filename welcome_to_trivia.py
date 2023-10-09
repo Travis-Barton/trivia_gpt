@@ -10,7 +10,7 @@ with col1:
     st.link_button(label="AI based question generation",
                    url='https://trivia-gpt.streamlit.app/')
 with col2:
-    st.title("Play as Trivia Master 🎮")
+    st.title("Play as Trivia Master ✍️")
     st.link_button(label="Run a game with friends",
         url='https://trivia-gpt-gm.streamlit.app/')
 with col3:
