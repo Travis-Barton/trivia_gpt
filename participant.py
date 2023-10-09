@@ -93,16 +93,22 @@ def main():
         questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).stream()
         questions = {doc.id: doc.to_dict() for doc in questions_ref}
         answers = {doc.id: doc.to_dict() for doc in answers_ref}
-        for question_id, question_data in questions.items():
+        sorted_questions = sorted(questions.items(), key=lambda x: x[1]['order'])
+        for question_id, question_data in sorted_questions:
             if question_data['revealed']:
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     st.markdown(f'**{question_data["question"]}**')
                 associated_answer = next((answer_data for answer_id, answer_data in answers.items() if
                                           answer_data.get('question_id') == question_id), None)
                 with col2:
                     if associated_answer:
-                        st.markdown(f'*{associated_answer["answer"]}*')
+                        st.markdown(f'*{associated_answer["answer"].strip()}*')
+                    else:
+                        st.markdown(f'*No Answer*')
+                with col3:
+                    if associated_answer:
+                        st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}*')
                     else:
                         st.markdown(f'*No Answer*')
 
