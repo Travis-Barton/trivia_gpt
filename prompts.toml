@@ -200,4 +200,6 @@ human_prompt = """
     "answer": {answer},
     "user_answer": {user_answer},
 }}
+
+The answer we were looking for was {answer}. The user answered {user_answer}.
 """
