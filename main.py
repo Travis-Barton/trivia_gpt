@@ -8,7 +8,7 @@ import datetime
 
 def grade_question(data, context):
     """
-    This listens to the "answers" document change (write only?) in firestore and uses the "_grade_answer" endpoint.
+    This listens to the "answers" document write in firestore and uses the "_grade_answer" endpoint.
 
     :param data:
     :param context:
