@@ -1,3 +1,5 @@
+import logging
+
 import firebase_admin
 from utils.language_model_tools import _grade_answer
 from utils.firebase_tools import get_db
@@ -43,5 +45,6 @@ def grade_question(data, context):
         'correct': grade['grade'],
         'graded': True,
     })
+    logging.info(f'Question {question_id} graded {grade["grade"]} with {user_answer} for reason {grade["explanation"]}')
     return {'message': f'graded {question_id} for {user_answer}'}
 
