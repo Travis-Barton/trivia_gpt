@@ -208,13 +208,10 @@ def main():
             if 'board_value' not in st.session_state:
                 st.session_state.board_value = Game.get_scoreboard(st.session_state.game_id)
             # Update the session state board to include any new participants
-            for participant in user_ids:
-                if participant not in st.session_state.board_value.columns:
-                    st.session_state.board_value[participant] = False
             # Get the latest board from the game
             board = Game.get_scoreboard(st.session_state.game_id)
             # Show the data editor for the board and capture any modifications
-            new_board = st.data_editor(st.session_state.board_value, use_container_width=True)
+            new_board = st.data_editor(board, use_container_width=True)
             # Use the `sync_with_firestore` function to manage board changes and session state
             sync_with_firestore(new_board, board)
 
