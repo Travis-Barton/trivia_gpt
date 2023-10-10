@@ -2,7 +2,7 @@ watchdog<2.0.0,>=1.0.0
 firebase-admin
 pandas
 langchain~=0.0.295
-streamlit
+streamlit==1.27.0
 openai
 toml
 streamlit-survey
