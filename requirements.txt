@@ -1,4 +1,3 @@
-watchdog<2.0.0,>=1.0.0
 firebase-admin
 pandas
 langchain~=0.0.295
