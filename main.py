@@ -45,6 +45,6 @@ def grade_question(data, context):
         'correct': grade['grade'],
         'graded': True,
     })
-    logging.info(f'Question {question_id} graded {grade["grade"]} with {user_answer} for reason {grade["explanation"]}')
+    print(f'Question {question_id} graded {grade["grade"]} with {user_answer} for reason {grade["explanation"]}')
     return {'message': f'graded {question_id} for {user_answer}'}
 
