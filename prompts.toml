@@ -173,6 +173,7 @@ Examples:
 2. if they got the answer right, but used a synonym, give it to them.
 3. if they got the answer right, but used a different format (like saying "SAT" rather than "Scholastic Aptitude Test"), give it to them.
 4. if they got the answer right, but used a different word order (like saying "The United States of America" rather than "America"), give it to them.
+5. If they use a first name to describe a person, and the answer is a first and last name, give it to them. (eg: if the answer is "Barack Obama" and they said "Barack" or "Obama", give it to them)
 
 however, dont be too lenient. If they genuinely got the answer wrong, dont give it to them.
 Examples:
