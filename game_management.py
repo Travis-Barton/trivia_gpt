@@ -125,6 +125,7 @@ def main():
                     'game_id': game_id,
                     'question_id': question_id,
                     'revealed': False,
+                    'waiting_screen': False,
                     'created_at': datetime.now(),
                     'modified_at': datetime.now(),
                     # 'correct': False,
