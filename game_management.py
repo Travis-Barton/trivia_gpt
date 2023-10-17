@@ -194,7 +194,7 @@ def main():
     with col_left:
         st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
     with col_right:
-        st.session_state.waiting_screen = st.checkbox('Waiting Screen', value=st.session_state.waiting_screen)
+        st.session_state.waiting_screen = st.checkbox('Waiting Screen', value=st.session_state.waiting_screen, key='waiting_screen')
 
     game_leaderboards, edit_player_scores, game_pace_control = st.tabs(['Leaderboards',
                                                                         'Edit Player Scores',
