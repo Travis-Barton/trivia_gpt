@@ -12,7 +12,7 @@ st.set_page_config(layout="wide",
 db = firestore.client()
 
 
-@st.cache_resource(experimental_allow_widgets=True)
+@st.cache_data(experimental_allow_widgets=True)
 def get_manager():
     return stx.CookieManager()
 
