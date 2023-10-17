@@ -88,8 +88,10 @@ def main():
         else:
             st.markdown(f"Using Game ID: __{game_id}__")
             # Update the session state with the game_id from the cookie
-        st.session_state.game_id = game_id
-        st.session_state.user_id = team_name
+        if 'game_id' not in st.session_state:
+            st.session_state.game_id = game_id
+        if 'user_id' not in st.session_state:
+            st.session_state.user_id = team_name
         if not db.collection(u'games').document(st.session_state.game_id).get().exists:
             st.warning("Please enter a valid Game ID to join the game.")
             st.stop()
