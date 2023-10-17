@@ -73,6 +73,7 @@ def main():
             st.markdown(f"Welcome, __{team_name}!__")
 
         game_id = cookie_manager.get("game_id")
+        print(game_id)
         if not game_id:
             game_id = st.text_input("Enter Game ID:", value=None)
             print(f"game_id: {game_id}")
@@ -80,7 +81,6 @@ def main():
                 # Check the validity of the game_id (assuming you have a function or method for that)
                 if db.collection(u'games').document(game_id).get().exists:
                     # Save game_id as a cookie for 24 hours
-                    cookie_manager.delete("game_id")
                     cookie_manager.set("game_id", game_id)
                 else:
                     st.warning("Please enter a valid Game ID to join the game.")
