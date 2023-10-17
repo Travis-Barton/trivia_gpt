@@ -1,5 +1,8 @@
 import streamlit as st
 from utils.firebase_tools import get_db
+from utils.apperence_utils import footer
+
+
 
 st.set_page_config(page_title="Game Redirect", page_icon="🎮")
 
@@ -31,6 +34,6 @@ def main():
         else:
             st.warning("Please enter a valid Game ID.")
 
-
+    footer()
 if __name__ == "__main__":
     main()
