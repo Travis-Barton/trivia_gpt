@@ -1,6 +1,8 @@
 import streamlit as st
 from utils.firebase_tools import get_db
 
+st.set_page_config(page_title="Game Redirect", page_icon="🎮")
+
 
 db = get_db()
 
