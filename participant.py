@@ -44,6 +44,7 @@ def main():
             st.warning("Please enter a valid Game ID to join the game.")
             st.stop()
 
+
     game_ref = db.collection(u'games').document(st.session_state.game_id)
     game = game_ref.get().to_dict()
     if st.session_state.user_id not in game['user_ids']:
@@ -57,8 +58,8 @@ def main():
                                                                                                          u'==',
                                                                                                          True).stream()
     open_questions = {doc.id: doc.to_dict() for doc in questions_ref}
-
-    if not open_questions:
+    waiting_screen = game.get('waiting_screen', False)
+    if not open_questions and not waiting_screen:
         st.info("Waiting for questions...")
         st.stop()
 

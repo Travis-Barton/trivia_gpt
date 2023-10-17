@@ -161,6 +161,8 @@ def main():
     if 'show_answers' not in st.session_state:
         st.session_state.show_answers = False  # Initialize with a default value
 
+    if 'waiting_screen' not in st.session_state:
+        st.session_state.waiting_screen = False
     # Fetch all questions for the game at once
     questions = questions_ref.where('game_id', '==', st.session_state.game_id).stream()
     questions_list = [q.to_dict() for q in questions]
@@ -187,7 +189,11 @@ def main():
         # refresh the participants list
         # game_ref = db.collection(u'games').document(st.session_state.game_id)
         st.experimental_rerun()
-    st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
+    col_left, col_right = st.columns(2)
+    with col_left:
+        st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
+    with col_right:
+        st.session_state.waiting_screen = st.checkbox('Waiting Screen', value=st.session_state.waiting_screen)
 
     game_leaderboards, edit_player_scores, game_pace_control = st.tabs(['Leaderboards',
                                                                         'Edit Player Scores',
@@ -196,6 +202,9 @@ def main():
     game_ref = db.collection(u'games').document(st.session_state.game_id)
     game_ref.update({
         'show_answers': st.session_state.show_answers
+    })
+    game_ref.update({
+        'waiting_screen': st.session_state.waiting_screen
     })
     check_all_answers_graded = Game.check_all_answers_graded(st.session_state.game_id)
     if check_all_answers_graded:
