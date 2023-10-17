@@ -169,7 +169,7 @@ def main():
             question = questions_ref.document(question_id).get().to_dict()
             if question_id not in st.session_state.toggle_states:
                 st.session_state.toggle_states[question_id] = question['revealed']
-            new_toggle_state = st.toggle(question['question'], key=question_id,
+            new_toggle_state = st.toggle(question['question'] + f"({question['answer']})", key=question_id,
                                          value=st.session_state.toggle_states[question_id],
                                          help=question['answer'])
             # Update the toggle state in session_state and Firestore if changed
