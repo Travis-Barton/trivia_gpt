@@ -20,7 +20,7 @@ with col2:
 with col3:
     st.title("Play as Participant 🎮")
     st.link_button(label="Join a game with friends",
-        url='https://trivia-gpt-participant.streamlit.app/')
+        url='https://join-trivia-game.streamlit.app/')
 
 
 st.markdown('Brought to you by [Travis Barton Consulting](https://www.travisbarton.com)')

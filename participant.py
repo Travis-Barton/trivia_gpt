@@ -21,8 +21,8 @@ def main():
 
     # Handle if there are no params
     if not game_id_param or not team_name_param:
-        st.write("Oops! Seems like you've landed here without a game_id or team_name.")
-        st.link_button("click here to join a game!", url='https://trivia-gpt-gm.streamlit.app/')
+        st.markdown("Oops! Seems like you've landed here without a __game id__ or a __team name__.")
+        st.link_button("click here to join a game!", url='https://join-trivia-game.streamlit.app/')
         st.stop()
 
     # If there are params, save them to the session state
