@@ -3,7 +3,10 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 from models.componants import Question, Answer
-
+st.set_page_config(
+    page_title="Lets play Trivia",
+    page_icon="🎮",
+)
 # Firebase Initialization
 
 db = firestore.client()

@@ -1,5 +1,9 @@
 import streamlit as st
 
+st.set_page_config(
+    page_title="Welcome to AI Trivia",
+    page_icon="👋",
+)
 
 st.title("Welcome to Trivia! 🎉")
 st.subheader('A fun AI power application that generates questions and grades answers in real-time!')
