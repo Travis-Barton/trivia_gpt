@@ -55,9 +55,9 @@ def main():
 
     with settings:
         # option to reset the game and start over with a new game_id and team name. Essentially nuke the cookies
-        if st.button('Reset Game'):
-            for cookie in cookie_manager.get_all():
-                cookie_manager.delete(cookie)
+        if st.button('Reset Game'):  # delete cookies
+            cookie_manager.delete("game_id")
+            cookie_manager.delete("team_name")
             st.experimental_rerun()
     with play:
         # Check if a team name is already saved in cookies
