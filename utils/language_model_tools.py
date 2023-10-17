@@ -26,16 +26,32 @@ from langchain.chat_models import ChatOpenAI
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
 from concurrent.futures import ThreadPoolExecutor
+from langchain.tools import WikipediaQueryRun
+from langchain.utilities import WikipediaAPIWrapper
+import os
+import toml
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Construct the path to the secrets.toml file
+SECRETS_PATH = os.path.join(BASE_DIR, '..', '.streamlit', 'secrets.toml')
+
+# Load the secrets from the file
+toml_secrets = toml.load(SECRETS_PATH)
 try:
-    os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
-    os.environ['OPENAI_API_KEY'] = toml.load('.streamlit/secrets.toml')['llm_api_keys']['OPENAI_API_KEY']
+    toml_secrets = toml.load(SECRETS_PATH)
+    os.environ["BING_SUBSCRIPTION_KEY"] = toml_secrets['llm_api_keys']['BING_SEARCH_API']
+    os.environ['OPENAI_API_KEY'] = toml_secrets['llm_api_keys']['OPENAI_API_KEY']
     os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
-except:
-    os.environ["BING_SUBSCRIPTION_KEY"] = toml.load('../.streamlit/secrets.toml')['llm_api_keys']['BING_SEARCH_API']
-    os.environ['OPENAI_API_KEY'] = toml.load('../.streamlit/secrets.toml')['llm_api_keys']['OPENAI_API_KEY']
-    os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
+except FileNotFoundError:
+    print(f"Could not find the secrets file at: {SECRETS_PATH}")
+    # You can either exit the program or fall back to other methods for obtaining secrets
+    # For now, we'll just print the error. You can decide what action to take.
+
+os.environ['LANGCHAIN_TRACING_V2'] = 'true'
+os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
+os.environ['LANGCHAIN_API_KEY'] = toml_secrets['langsmith_api']['langsmith_api']
+os.environ['LANGCHAIN_PROJECT'] = 'trivia-gpt'
 
 
 class Question(BaseModel):
@@ -66,13 +82,13 @@ def get_prompt(section, value):
 
 
 async def aquestion_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
-                             run_attempts=0, st_status=None) -> Dict[str, List[Dict[str, str]]]:
+                             run_attempts=0, st_status=None, temperature=0) -> Dict[str, List[Dict[str, str]]]:
     """
     Uses an OpenAI model to generate a list of questions for each category.
     :param categories:
     :return:
     """
-    llm = ChatOpenAI(temperature=float(run_attempts)/10, model_name='gpt-4')
+    llm = ChatOpenAI(temperature=temperature + float(run_attempts)/10, model_name='gpt-4')
     if context:
         context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
     else:
@@ -162,6 +178,11 @@ def fact_check_question(question, answer, category, try_attempts=0):
             func=search.run,
             description="useful for when you need to answer questions about current events. You should ask targeted questions",
         ),
+        Tool(
+            name="Wikipedia",
+            func=WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()).run,
+            description='Usefil for when you want to use keywords to pull up the wikipedia page for a topic.'
+        )
     ]
 
     llm = ChatOpenAI(temperature=float(try_attempts)/10, model_name='gpt-3.5-turbo')
@@ -301,7 +322,7 @@ def fix_question(question, answer, category, explanation, previous_questions, ru
         val = new_fact_check['fact_check']
         question = new_fact_check['question']
         answer = new_fact_check['answer']
-        category = new_fact_check['category']
+        category = category
         explanation = new_fact_check['explanation']
         k += 1
 
@@ -406,7 +427,7 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
         if try_attempts > 10:
             print(f'failed to grade answer: {user_answer} with error: {e}')
             return {
-                'correct': True}  # This cannot fail, so if it does, just return True
+                'grade': True}  # This cannot fail, so if it does, just return True
         return _grade_answer(question, answer, user_answer, try_attempts=try_attempts + 1)
 
 
