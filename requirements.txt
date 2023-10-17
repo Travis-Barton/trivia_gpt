@@ -1,3 +1,4 @@
+extra-streamlit-components
 firebase-admin
 pandas
 langchain~=0.0.295
@@ -5,5 +6,4 @@ streamlit
 openai
 toml
 streamlit-survey
-extra-streamlit-components
 streamlit-authenticator
