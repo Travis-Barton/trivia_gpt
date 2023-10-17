@@ -5,8 +5,8 @@ st.set_page_config(
     page_icon="👋",
 )
 
-st.title("Welcome to Trivia! 🎉")
-st.subheader('A fun AI power application that generates questions and grades answers in real-time!')
+st.title("Welcome to Trivia GPT! 🎉")
+st.subheader('A fun AI powered application that generates questions and grades answers in real-time with AI!')
 
 col1, col2, col3 = st.columns(3)
 with col1:

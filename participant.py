@@ -16,7 +16,8 @@ db = db = get_db()
 
 def main():
     st.title("Trivia Game")
-
+    if st.button('Fetch new question'):
+        st.rerun()
     # Check URL parameters for game_id and team_name
     params = st.experimental_get_query_params()
     game_id_param = params.get("game_id", None)
