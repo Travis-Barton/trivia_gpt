@@ -58,10 +58,11 @@ def main():
         if st.button('Reset Game'):  # delete cookies
             cookie_manager.delete("game_id")
             cookie_manager.delete("team_name")
-            st.experimental_rerun()
+            st.rerun()
     with play:
         # Check if a team name is already saved in cookies
         team_name = cookie_manager.get("team_name")
+        st.write(cookie_manager.get("team_name"))
         if not team_name:
             team_name = st.text_input("Enter Your Team Name:")
             if team_name:
