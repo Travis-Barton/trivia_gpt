@@ -21,7 +21,7 @@ def main():
 
     # Handle if there are no params
     if not game_id_param or not team_name_param:
-        st.markdown("Oops! Seems like you've landed here without a __game id__ or a __team name__.")
+        st.title("Oops! Seems like you've landed here before you've chosen a game to join.")
         st.link_button("click here to join a game!", url='https://join-trivia-game.streamlit.app/')
         st.stop()
 

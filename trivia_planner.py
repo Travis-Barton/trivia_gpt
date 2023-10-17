@@ -23,7 +23,6 @@ def clear_cache():
     st.session_state.data = pd.DataFrame()
 
 
-
 # In your main coroutine
 async def process_rows():
     tasks = []
@@ -59,6 +58,10 @@ async def process_and_update_rows():
 
 
 def main():
+    st.markdown('''
+    # Welcome to AI Trivia! 🎉
+    ## A fun AI power application that generates questions and grades answers in real-time!
+    ''')
     if "data" not in st.session_state:
         st.session_state.data = pd.DataFrame()
 
