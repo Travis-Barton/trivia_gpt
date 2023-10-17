@@ -62,9 +62,9 @@ def main():
     with play:
         # Check if a team name is already saved in cookies
         team_name = cookie_manager.get("team_name")
-        st.write(cookie_manager.get("team_name"))
+        st.write(cookie_manager.cookies)
         if not team_name:
-            team_name = st.text_input("Enter Your Team Name:")
+            team_name = st.text_input("Enter Your Team Name:", None)
             if team_name:
                 # Set the team name as a cookie for 24 hours
                 cookie_manager.set("team_name", team_name)
