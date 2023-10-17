@@ -59,7 +59,7 @@ def main():
                                                                                                          True).stream()
     open_questions = {doc.id: doc.to_dict() for doc in questions_ref}
     waiting_screen = game.get('waiting_screen', False)
-    if not open_questions and not waiting_screen:
+    if not open_questions or waiting_screen:
         st.info("Waiting for questions...")
         st.stop()
 
