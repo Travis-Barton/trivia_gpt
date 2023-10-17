@@ -6,3 +6,4 @@ openai
 toml
 streamlit-survey
 extra-streamlit-components
+streamlit-authenticator
