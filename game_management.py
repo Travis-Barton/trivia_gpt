@@ -94,7 +94,9 @@ def update_answer(question_id, team, new_value):
         })
 
 def main():
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide",
+                       page_title="Trivia Game Management",
+                       page_icon="✍️")
 
     # Initialize these references and variables at the top
     questions_ref = db.collection(u'questions')
