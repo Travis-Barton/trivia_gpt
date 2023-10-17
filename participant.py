@@ -2,6 +2,8 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
+from utils.firebase_tools import get_db
+
 from models.componants import Question, Answer
 
 st.set_page_config(layout="wide",
@@ -9,7 +11,8 @@ st.set_page_config(layout="wide",
                    page_icon="🎮",
 )
 
-db = firestore.client()
+db = db = get_db()
+
 
 def main():
     st.title("Trivia Game")

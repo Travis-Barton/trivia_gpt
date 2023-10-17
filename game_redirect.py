@@ -1,8 +1,9 @@
 import streamlit as st
-from firebase_admin import credentials, firestore
+from utils.firebase_tools import get_db
 
 
-db = firestore.client()
+db = get_db()
+
 
 BASE_URL = "https://trivia-gpt-participant.streamlit.app/"
 
