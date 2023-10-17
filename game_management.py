@@ -161,28 +161,37 @@ def main():
     if 'show_answers' not in st.session_state:
         st.session_state.show_answers = False  # Initialize with a default value
 
-    # Open Questions
-    col1, col2, col3 = st.columns(3)
-    for idx, question_id in enumerate(question_ids):
+    # Fetch all questions for the game at once
+    questions = questions_ref.where('game_id', '==', st.session_state.game_id).stream()
+    questions_list = [q.to_dict() for q in questions]
 
-        with col1 if idx % 3 == 0 else col2 if idx % 3 == 1 else col3:
-            question = questions_ref.document(question_id).get().to_dict()
-            if question_id not in st.session_state.toggle_states:
-                st.session_state.toggle_states[question_id] = question['revealed']
-            new_toggle_state = st.toggle(question['question'] + f"({question['answer']})", key=question_id,
-                                         value=st.session_state.toggle_states[question_id],
-                                         help=question['answer'])
-            # Update the toggle state in session_state and Firestore if changed
-            if new_toggle_state != st.session_state.toggle_states[question_id]:
-                st.session_state.toggle_states[question_id] = new_toggle_state
-                invert_question_status(question_id)
+    questions_list.sort(key=lambda x: x['order'])
+    # Open Questions
+    # col1, col2, col3 = st.columns(3)
+    for question in questions_list:
+        question_id = question['question_id']
+
+        # with col1 if idx % 3 == 0 else col2 if idx % 3 == 1 else col3:
+        question = questions_ref.document(question_id).get().to_dict()
+        if question_id not in st.session_state.toggle_states:
+            st.session_state.toggle_states[question_id] = question['revealed']
+        new_toggle_state = st.toggle(f"{question['order']+1}: {question['question']}", key=question_id,
+                                     value=st.session_state.toggle_states[question_id],
+                                     help=question['answer'])
+        # Update the toggle state in session_state and Firestore if changed
+        if new_toggle_state != st.session_state.toggle_states[question_id]:
+            st.session_state.toggle_states[question_id] = new_toggle_state
+            invert_question_status(question_id)
 
     if st.button('update participants'):
         # refresh the participants list
-        game_ref = db.collection(u'games').document(st.session_state.game_id)
+        # game_ref = db.collection(u'games').document(st.session_state.game_id)
+        st.experimental_rerun()
     st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
 
-    game_leaderboards, edit_player_scores = st.tabs(['Leaderboards', 'Edit Player Scores'])
+    game_leaderboards, edit_player_scores, game_pace_control = st.tabs(['Leaderboards',
+                                                                        'Edit Player Scores',
+                                                                        'Game Pace Control'])
     # Update the database based on the checkbox state
     game_ref = db.collection(u'games').document(st.session_state.game_id)
     game_ref.update({
@@ -193,6 +202,7 @@ def main():
         st.success('All answers have been graded!')
     else:
         st.warning('Not all answers have been graded yet.')
+
     with game_leaderboards:
         leaderboard = Game.get_leaderboard(st.session_state.game_id)
         st.dataframe(leaderboard, width=600)
@@ -214,5 +224,6 @@ def main():
             new_board = st.data_editor(board, use_container_width=True)
             # Use the `sync_with_firestore` function to manage board changes and session state
             sync_with_firestore(new_board, board)
+
 
 main()
