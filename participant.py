@@ -81,9 +81,7 @@ def main():
                 # Check the validity of the game_id (assuming you have a function or method for that)
                 if db.collection(u'games').document(game_id).get().exists:
                     # Save game_id as a cookie for 24 hours
-                    if 'game_id' in st.session_state:
-                        del st.session_state['game_id']
-                    cookie_manager.set("game_id", game_id)
+                    cookie_manager.set("game_id", game_id, key="game_id")
                 else:
                     st.warning("Please enter a valid Game ID to join the game.")
                     st.stop()
