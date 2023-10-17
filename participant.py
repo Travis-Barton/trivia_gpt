@@ -93,20 +93,22 @@ def main():
         if 'user_id' not in st.session_state:
             st.session_state.user_id = team_name
         # if not db.collection(u'games').document(st.session_state.game_id).get().exists:
-        if not db.collection(u'games').document(cookie_manager.get('game_id')).get().exists:
+        game_id = cookie_manager.get('game_id')
+        user_id = cookie_manager.get('user_id')
+        if not db.collection(u'games').document(game_id).get().exists:
             st.warning("Please enter a valid Game ID to join the game.")
             st.stop()
 
-        game_ref = db.collection(u'games').document(st.session_state.game_id)
+        game_ref = db.collection(u'games').document(game_id)
         game = game_ref.get().to_dict()
         if st.session_state.user_id not in game['user_ids']:
             game_ref.update({
-                'user_ids': firestore.ArrayUnion([st.session_state.user_id])
+                'user_ids': firestore.ArrayUnion([user_id])
             })
 
         # Display Open Questions
         # Fetch all questions for the game without sorting
-        questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).where(u'revealed',
+        questions_ref = db.collection(u'questions').where(u'game_id', u'==', game_id).where(u'revealed',
                                                                                                              u'==',
                                                                                                              True).stream()
         open_questions = {doc.id: doc.to_dict() for doc in questions_ref}
@@ -124,7 +126,7 @@ def main():
         st.markdown(f"**{latest_question['question']}**")
 
         # Check if user has already answered this question
-        answered_already = db.collection(u'answers').where(u'user_id', u'==', st.session_state.user_id).where(
+        answered_already = db.collection(u'answers').where(u'user_id', u'==', user_id).where(
             u'question_id', u'==', latest_question_id).get()
 
         if not answered_already:
@@ -136,8 +138,8 @@ def main():
             if st.button(f"Submit Your Final Answer", key=f"btn_{latest_question_id}"):
                 if user_answer:
                     answer_ref = db.collection(u'answers').add({
-                        'user_id': st.session_state.user_id,
-                        'game_id': st.session_state.game_id,
+                        'user_id': user_id,
+                        'game_id': game_id,
                         'question_id': latest_question_id,
                         'answer': user_answer,
                         'timestamp': datetime.now(),
@@ -153,10 +155,10 @@ def main():
 
         # list all of their answers if any if answers have been revealed
         if game['show_answers']:
-            st.markdown(f'Answers for {st.session_state.user_id}')
-            answers_ref = db.collection(u'answers').where(u'user_id', u'==', st.session_state.user_id).where(
-                u'game_id', u'==', st.session_state.game_id).stream()
-            questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).stream()
+            st.markdown(f'Answers for {user_id}')
+            answers_ref = db.collection(u'answers').where(u'user_id', u'==', user_id).where(
+                u'game_id', u'==', game_id).stream()
+            questions_ref = db.collection(u'questions').where(u'game_id', u'==', game_id).stream()
             questions = {doc.id: doc.to_dict() for doc in questions_ref}
             answers = {doc.id: doc.to_dict() for doc in answers_ref}
             sorted_questions = sorted(questions.items(), key=lambda x: x[1]['order'])
