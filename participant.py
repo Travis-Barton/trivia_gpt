@@ -5,7 +5,10 @@ from datetime import datetime
 # from models.componants import Question, Answer
 import extra_streamlit_components as stx
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                   page_title="Lets play Trivia",
+                   page_icon="🎮",
+)
 
 
 @st.cache_resource(experimental_allow_widgets=True)

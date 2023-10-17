@@ -8,7 +8,9 @@ import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                   page_title="AI Trivia",
+                   page_icon="✍️")
 
 
 # @st.cache_data
