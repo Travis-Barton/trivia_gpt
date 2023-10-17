@@ -92,7 +92,8 @@ def main():
             st.session_state.game_id = game_id
         if 'user_id' not in st.session_state:
             st.session_state.user_id = team_name
-        if not db.collection(u'games').document(st.session_state.game_id).get().exists:
+        # if not db.collection(u'games').document(st.session_state.game_id).get().exists:
+        if not db.collection(u'games').document(cookie_manager.get('game_id')).get().exists:
             st.warning("Please enter a valid Game ID to join the game.")
             st.stop()
 
