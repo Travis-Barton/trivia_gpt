@@ -4,11 +4,12 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 # from models.componants import Question, Answer
 import extra_streamlit_components as stx
-
+from models.componants import Question, Answer
 st.set_page_config(layout="wide",
                    page_title="Lets play Trivia",
                    page_icon="🎮",
 )
+db = firestore.client()
 
 
 @st.cache_resource(experimental_allow_widgets=True)
@@ -22,7 +23,6 @@ def update_user_id(user_id):
     st.session_state.user_id = user_id
 
 
-db = firestore.client()
 
 
 def main():
