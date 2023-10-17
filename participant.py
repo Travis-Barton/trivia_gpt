@@ -3,20 +3,17 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 # from models.componants import Question, Answer
-import extra_streamlit_components as stx
+# import extra_streamlit_components as stx
+from streamlitextras.cookiemanager import get_cookie_manager
+
 from models.componants import Question, Answer
 st.set_page_config(layout="wide",
                    page_title="Lets play Trivia",
                    page_icon="🎮",
 )
 db = firestore.client()
+cookie_manager = None
 
-
-@st.cache_data(experimental_allow_widgets=True)
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
 
 
 def update_user_id(user_id):
@@ -26,6 +23,7 @@ def update_user_id(user_id):
 
 
 def main():
+    play, settings = st.tabs(['Play', 'Settings'])
     # st.set_page_config(layout="wide")
     # if st.button('Fetch New Question'):
     #     st.info("Fetching new question...")
@@ -51,7 +49,10 @@ def main():
     #         st.warning("Please enter a valid Game ID to join the game.")
     #         st.stop()
 
-    play, settings = st.tabs(['Play', 'Settings'])
+    global cookie_manager
+    cookie_manager = get_cookie_manager()
+    cookie_manager.delayed_init()  # Makes sure CookieManager stays in st.session_state
+
     with settings:
         # option to reset the game and start over with a new game_id and team name. Essentially nuke the cookies
         if st.button('Reset Game'):
