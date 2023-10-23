@@ -253,11 +253,12 @@ class Game:
             user_id = answer['user_id']
             question_id = answer['question_id']
             question = Question.load(question_id)
+            if question.question not in user_answers:
+                user_answers[question.question] = {}
+            if user_id not in user_answers[question.question]:
+                user_answers[question.question][user_id] = {}
 
-            if user_id not in user_answers:
-                user_answers[user_id] = {}
-
-            user_answers[user_id][question.question] = answer['answer']
+            user_answers[question.question][user_id] = answer['answer']
 
         return user_answers
 
