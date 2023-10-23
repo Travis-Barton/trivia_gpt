@@ -1,6 +1,5 @@
 import os
 from typing import List, Dict, Union
-import streamlit as st
 import pandas as pd
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import Tool
@@ -359,7 +358,6 @@ def grade_responses(response_json):
     final_score = pd.DataFrame(columns=['question', 'answer', 'category', 'user_answer', 'grade'])
     total_score = pd.DataFrame(
         columns=['category', 'total_questions', 'total_correct', 'total_incorrect', 'total_score'])
-    st.write("Grading responses...")
     for key, val in eval(response_json).items():
         question, answer, category = key.split(' || ')
         user_answer = val['value']
@@ -378,9 +376,6 @@ def grade_responses(response_json):
                                          len(final_score.loc[final_score.grade == True]) / len(final_score)]
 
     # make a table of the results
-    st.balloons()
-    st.table(total_score)
-    st.table(final_score)
     return total_score, final_score
 
 
