@@ -200,7 +200,7 @@ class Game:
         :return:
         """
         answers_ref = get_db().collection(u'answers').where(u'game_id', u'==', game_id).stream()
-        questions_ref = get_db().collection(u'questions').where(u'game_id', u'==', game_id).stream()
+        questions_ref = get_db().collection(u'questions').where(u'game_id', u'==', game_id).where(u'revealed', u'==', True).stream()
         questions = {doc.id: doc.to_dict() for doc in questions_ref}
         answers = {doc.id: doc.to_dict() for doc in answers_ref}
         scores = {}
