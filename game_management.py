@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import streamlit as st
 import firebase_admin
@@ -89,7 +91,7 @@ def get_question_id_from_text(question_text):
 
 def update_answer(question_id, team, new_value):
     answers_ref = db.collection(u'answers')
-    answer_query = answers_ref.where(u'question_id', u'==', question_id).where(u'user_id', u'==', team).get()
+    answer_query = answers_ref.where(u'question_id', u'==', question_id).where(u'user_id', u'==', team).where(u'game_id', u'==', st.session_state.game_id).get()
     if answer_query:
         answer_id = answer_query[0].id
         answers_ref.document(answer_id).update({
@@ -146,6 +148,7 @@ def main():
                 'question_ids': question_ids,
                 'show_answers': False,
                 'created_at': datetime.now(),
+                'scores': {},
             })
             st.write(f'Game {game_id} Started')
 
@@ -199,7 +202,7 @@ def main():
     if st.button('update participants'):
         # refresh the participants list
         # game_ref = db.collection(u'games').document(st.session_state.game_id)
-        st.experimental_rerun()
+        st.rerun()
     col_left, col_right = st.columns(2)
     with col_left:
         st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
@@ -225,6 +228,7 @@ def main():
 
     with game_leaderboards:
         leaderboard = Game.get_leaderboard(st.session_state.game_id)
+        # leaderboard = game_ref.get().to_dict()['scores']  # someday
         st.dataframe(leaderboard, width=600)
     with edit_player_scores:
         game = game_ref.get().to_dict()
