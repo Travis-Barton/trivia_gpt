@@ -8,3 +8,4 @@ streamlit-survey
 streamlit-authenticator
 streamlit-base-extras
 htbuilder
+wikipedia
