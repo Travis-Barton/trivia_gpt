@@ -22,8 +22,8 @@ BEER_TYPES = [
     "Ale", "Lager", "Stout", "Malt", "Porter", "Pilsner", "Bock", "Wheat", "Sour", "Amber",
     "Blonde", "Brown", "Cream", "Dark", "Dunkel", "Fruit", "Golden", "Honey", "India Pale", "Light",
     "Mead", "Mild", "Old", "Pale", "Red", "Rye", "Scotch", "Strong", "Tripel", "Vienna",
-    "Barleywine", "Berliner", "Seltzer", "Black", "Brett", "Double", "Dry", "Dubbel", "Eisbock", "Gose",
-    "Helles", "Kolsch", "Lambic", "Marzen", "Oatmeal", "Quadrupel", "Rauchbier", "Saison", "Trappist", "Witbier"
+     "Seltzer", "Black", "Brett", "Double", "Dry", "Dubbel", "Eisbock", "Gose",
+    "Helles", "Kolsch", "Oatmeal", "Quad"
 ]
 
 def generate_3_digit_code():
@@ -41,10 +41,12 @@ def check_combination_exists(combination):
 
 
 def generate_game_id():
-    animal = rd.choice(ANIMALS)
-    beer = rd.choice(BEER_TYPES)
-    code = generate_3_digit_code()
-    combination = f"{animal}{beer}{code}"
+    # animal = rd.choice(ANIMALS)
+    # beer = rd.choice(BEER_TYPES)
+    # code = generate_3_digit_code()
+    # combination = f"{animal}{beer}{code}"
+    # change this to a 4 digit alphanumeric code
+    combination = ''.join(rd.choice(string.ascii_uppercase + string.digits) for _ in range(4))
 
     if check_combination_exists(combination):
         return generate_game_id()
@@ -69,6 +71,7 @@ def sync_with_firestore(updated_board, old_board):
     if not updated_board.equals(old_board):
         handle_change(updated_board, old_board)
         st.session_state.old_board = updated_board.copy()
+        st.rerun()
 
 
 def handle_change(updated_board, old_board):
@@ -90,7 +93,8 @@ def update_answer(question_id, team, new_value):
     if answer_query:
         answer_id = answer_query[0].id
         answers_ref.document(answer_id).update({
-            'correct': bool(new_value)
+            'correct': bool(new_value),
+            'edited': True
         })
 
 def main():
@@ -187,6 +191,10 @@ def main():
         if new_toggle_state != st.session_state.toggle_states[question_id]:
             st.session_state.toggle_states[question_id] = new_toggle_state
             invert_question_status(question_id)
+            st.session_state.show_answers = False
+            game_ref.update({
+                'show_answers': st.session_state.show_answers
+            })
 
     if st.button('update participants'):
         # refresh the participants list
@@ -223,7 +231,7 @@ def main():
         user_ids = game['user_ids']
         col1, col2 = st.columns(2)
         with col1:
-            st.json(Game.get_user_answers(st.session_state.game_id))
+            st.json(Game.get_user_answers(st.session_state.game_id), expanded=False)
         with col2:
             st.markdown('**Edit Player Scores**')
             # Initial load of the scoreboard into session state if it doesn't exist
