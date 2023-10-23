@@ -104,6 +104,12 @@ def main():
                        page_title="Trivia Game Management",
                        page_icon="✍️")
 
+    with st.sidebar:
+        st.title('Advanced Settings')
+        st.write('**Note:** These settings are for advanced users only. Please do not change these settings unless you know what you are doing.')
+
+        show_rational = st.checkbox('Show Rational', value=False)
+        include_answers = st.checkbox('Include Answers', value=False)
     # Initialize these references and variables at the top
     questions_ref = db.collection(u'questions')
     game_ref = None
@@ -149,6 +155,9 @@ def main():
                 'show_answers': False,
                 'created_at': datetime.now(),
                 'scores': {},
+                'waiting_screen': False,
+                'include_answers': include_answers,
+                'show_rational': show_rational,
             })
             st.write(f'Game {game_id} Started')
 

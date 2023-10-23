@@ -129,10 +129,18 @@ def main():
                     else:
                         st.markdown(f'*No Answer*')
                 with col3:
-                    if associated_answer:
-                        st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}*')
+                    show_rational = game.get('show_rational', False)
+                    if show_rational:
+                        if associated_answer:
+                            st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}*' +
+                                        f'*{associated_answer["reason"].strip()}*')
+                        else:
+                            st.markdown(f'*No Answer*')
                     else:
-                        st.markdown(f'*No Answer*')
+                        if associated_answer:
+                            st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}*')
+                        else:
+                            st.markdown(f'*No Answer*')
 
 
 main()
