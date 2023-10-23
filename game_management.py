@@ -107,9 +107,10 @@ def main():
     with st.sidebar:
         st.title('Advanced Settings')
         st.write('**Note:** These settings are for advanced users only. Please do not change these settings unless you know what you are doing.')
-
+        st.write("\n\nThese changes must be made prior to starting the game. Once the game has started, these settings cannot be changed.")
         show_rational = st.checkbox('Show Rational', value=False)
         include_answers = st.checkbox('Include Answers', value=False)
+
     # Initialize these references and variables at the top
     questions_ref = db.collection(u'questions')
     game_ref = None

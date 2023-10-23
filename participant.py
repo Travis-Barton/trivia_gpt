@@ -115,7 +115,9 @@ def main():
         sorted_questions.reverse()
         for question_id, question_data in sorted_questions:
             if question_data['revealed']:
-                col1, col2, col3 = st.columns(3)
+                show_rational = game.get('show_rational', False)
+
+                col1, col2, col3 = st.columns(3) if not show_rational else st.columns((3, 1, 3))
                 with col1:
                     st.markdown(f'**{question_data["question"]}**')
                 associated_answer = next((answer_data for answer_id, answer_data in answers.items() if
@@ -129,10 +131,9 @@ def main():
                     else:
                         st.markdown(f'*No Answer*')
                 with col3:
-                    show_rational = game.get('show_rational', False)
                     if show_rational:
                         if associated_answer:
-                            st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}*' +
+                            st.markdown(f'*{"✅" if associated_answer["correct"] else "❌"}* ' +
                                         f'*{associated_answer["reason"].strip()}*')
                         else:
                             st.markdown(f'*No Answer*')
