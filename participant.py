@@ -34,7 +34,7 @@ def main():
     with settings:
         if st.button('Reset Game'):
             # Clear session state
-            st.experimental_rerun()
+            st.rerun()
     with play:
         # Welcome the team and display Game ID
         st.markdown(f"Welcome, __{st.session_state.user_id}!__")
@@ -52,6 +52,8 @@ def main():
             'user_ids': firestore.ArrayUnion([st.session_state.user_id])
         })
 
+    if st.button('Refresh Question'):
+        st.rerun()
     # Display Open Questions
     # Fetch all questions for the game without sorting
     questions_ref = db.collection(u'questions').where(u'game_id', u'==', st.session_state.game_id).where(u'revealed',
@@ -109,6 +111,8 @@ def main():
         questions = {doc.id: doc.to_dict() for doc in questions_ref}
         answers = {doc.id: doc.to_dict() for doc in answers_ref}
         sorted_questions = sorted(questions.items(), key=lambda x: x[1]['order'])
+        # change the above to sort newest to oldest
+        sorted_questions.reverse()
         for question_id, question_data in sorted_questions:
             if question_data['revealed']:
                 col1, col2, col3 = st.columns(3)
@@ -116,6 +120,9 @@ def main():
                     st.markdown(f'**{question_data["question"]}**')
                 associated_answer = next((answer_data for answer_id, answer_data in answers.items() if
                                           answer_data.get('question_id') == question_id), None)
+                # from questions_ref
+                actual_answer = next((answer_data for question_id, answer_data in questions.items() if
+                                      question_id == question_id), None)
                 with col2:
                     if associated_answer:
                         st.markdown(f'*{associated_answer["answer"].strip()}*')
