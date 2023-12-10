@@ -209,15 +209,17 @@ def main():
                 'show_answers': st.session_state.show_answers
             })
 
-    if st.button('update participants'):
-        # refresh the participants list
-        # game_ref = db.collection(u'games').document(st.session_state.game_id)
-        st.rerun()
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
-    with col_right:
-        st.session_state.waiting_screen = st.checkbox('Waiting Screen', value=st.session_state.waiting_screen)
+    with st.sidebar:
+        st.title('Game State')
+        if st.button('update participants'):
+            # refresh the participants list
+            # game_ref = db.collection(u'games').document(st.session_state.game_id)
+            st.rerun()
+        col_left, col_right = st.columns(2)
+        with col_left:
+            st.session_state.show_answers = st.checkbox('Show Answers', value=st.session_state.show_answers)
+        with col_right:
+            st.session_state.waiting_screen = st.checkbox('Waiting Screen', value=st.session_state.waiting_screen)
 
     game_leaderboards, edit_player_scores, game_pace_control = st.tabs(['Leaderboards',
                                                                         'Edit Player Scores',
