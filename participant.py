@@ -63,44 +63,44 @@ def main():
     waiting_screen = game.get('waiting_screen', False)
     if not open_questions or waiting_screen:
         st.info("Waiting for questions...")
-        st.stop()
-
-    # Sort questions locally based on 'order'
-    latest_question_id = max(open_questions.keys(), key=lambda q_id: open_questions[q_id]['order'])
-    latest_question = open_questions[latest_question_id]
-    if latest_question['question'] == 'END||END||HOLD':
-        st.info("Waiting for questions...")
-        st.stop()
-    st.markdown(f"**{latest_question['question']}**")
-
-    # Check if user has already answered this question
-    answered_already = db.collection(u'answers').where(u'user_id', u'==', st.session_state.user_id).where(
-        u'question_id', u'==', latest_question_id).get()
-
-    if not answered_already:
-        user_answer = st.text_input(f"Your answer for: {latest_question['question']}",
-                                    key=f"answer_{latest_question_id}",
-                                    placeholder="Enter your answer here...",
-                                    label_visibility='hidden')
-
-        if st.button(f"Submit Your Final Answer", key=f"btn_{latest_question_id}"):
-            if user_answer:
-                answer_ref = db.collection(u'answers').add({
-                    'user_id': st.session_state.user_id,
-                    'game_id': st.session_state.game_id,
-                    'question_id': latest_question_id,
-                    'answer': user_answer,
-                    'timestamp': datetime.now(),
-                    'graded': False,
-                    'correct': False,
-                })
-                st.experimental_rerun()
-                st.success(f"Your answer for '{latest_question['question']}' has been submitted!")
-            else:
-                st.warning("Please enter an answer before submitting.")
+        # st.stop()
     else:
-        st.info(
-            f"You answered the question: \`{latest_question['question']}\` with: \`{answered_already[0].to_dict()['answer']}\`")
+        # Sort questions locally based on 'order'
+        latest_question_id = max(open_questions.keys(), key=lambda q_id: open_questions[q_id]['order'])
+        latest_question = open_questions[latest_question_id]
+        if latest_question['question'] == 'END||END||HOLD':
+            st.info("Waiting for questions...")
+            st.stop()
+        st.markdown(f"**{latest_question['question']}**")
+
+        # Check if user has already answered this question
+        answered_already = db.collection(u'answers').where(u'user_id', u'==', st.session_state.user_id).where(
+            u'question_id', u'==', latest_question_id).get()
+
+        if not answered_already:
+            user_answer = st.text_input(f"Your answer for: {latest_question['question']}",
+                                        key=f"answer_{latest_question_id}",
+                                        placeholder="Enter your answer here...",
+                                        label_visibility='hidden')
+
+            if st.button(f"Submit Your Final Answer", key=f"btn_{latest_question_id}"):
+                if user_answer:
+                    answer_ref = db.collection(u'answers').add({
+                        'user_id': st.session_state.user_id,
+                        'game_id': st.session_state.game_id,
+                        'question_id': latest_question_id,
+                        'answer': user_answer,
+                        'timestamp': datetime.now(),
+                        'graded': False,
+                        'correct': False,
+                    })
+                    st.experimental_rerun()
+                    st.success(f"Your answer for '{latest_question['question']}' has been submitted!")
+                else:
+                    st.warning("Please enter an answer before submitting.")
+        else:
+            st.info(
+                f"You answered the question: \`{latest_question['question']}\` with: \`{answered_already[0].to_dict()['answer']}\`")
 
     # list all of their answers if any if answers have been revealed
     if game['show_answers']:
