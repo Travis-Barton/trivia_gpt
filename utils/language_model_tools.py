@@ -104,7 +104,7 @@ async def aquestion_generator(categories: List[str], question_count: int = 10, d
         try:
             st_status.update_status('Generating questions...') if st_status else None
             result = await llm_chain.arun(categories=[category], question_count=question_count, difficulty=difficulty,
-                                          context=context)
+                                          context=context, tags=['question_generation'], verbose=True)
             return eval(result)
         except Exception as e:
             if run_attempts > 10:
@@ -147,7 +147,7 @@ def question_generator(categories: List[str], question_count: int = 10, difficul
     try:
         st_status.update_status('Generating questions...') if st_status else None
         result = llm_chain.run(categories=categories, question_count=question_count, difficulty=difficulty,
-                               context=context, verbose=True)
+                               context=context, verbose=True, tags=['question_generation'])
     except Exception as e:
         if run_attempts > 10:
             raise e
@@ -228,7 +228,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
     try:
         # result = llm_chain.run(question=question, answer=answer, category=category)
         result = agent_executor.run(input=human_prompt, question=question, answer=answer, category=category,
-                                    verbose=True)
+                                    verbose=True, tags=['fact_checking'])
         # Attempt to directly evaluate the result
         result = result.replace('"fact_check": false,', '"fact_check": False,').replace('"fact_check": true,',
                                                                                         '"fact_check": True,')
@@ -256,7 +256,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
         ]
         )
         llm_chain = create_structured_output_chain(output_schema=fact_check_question_schema, llm=llm, prompt=prompt, verbose=True)
-        result = llm_chain.run(result=result + '\nThe user submitted: ' + answer, question=question, answer=answer, category=category)
+        result = llm_chain.run(result=result + '\nThe user submitted: ' + answer, question=question, answer=answer, category=category, tags=['fact_checking'])
         result['question'] = question
         return result
 
@@ -294,7 +294,7 @@ def _fix_question(question, answer, category, explanation, previous_questions, r
     llm_chain = LLMChain(llm=llm, prompt=prompt)
     try:
         result = llm_chain.run(question=question, answer=answer, category=category, explanation=explanation,
-                               previous_questions=previous_questions, verbose=True)
+                               previous_questions=previous_questions, verbose=True, tags=['question_fixing'])
     except Exception as e:
         if run_attempts > 10:
             raise e
@@ -416,13 +416,14 @@ def _grade_answer(question, answer, user_answer, try_attempts=0):
     llm_chain = create_structured_output_chain(output_schema=grade_answer_schema, llm=llm, prompt=prompt, verbose=True)
     # llm_chain = LLMChain(llm=llm, prompt=prompt)
     try:
-        result = llm_chain.run(question=question, answer=answer, user_answer=user_answer, verbose=True)
+        result = llm_chain.run(question=question, answer=answer, user_answer=user_answer, verbose=True, tags=['answer_grading'])
         return result
     except Exception as e:
-        if try_attempts > 10:
+        if try_attempts > 5:
             print(f'failed to grade answer: {user_answer} with error: {e}')
             return {
-                'grade': True}  # This cannot fail, so if it does, just return True
+                'grade': True,
+                'explanation': str(e)}  # This cannot fail, so if it does, just return True
         return _grade_answer(question, answer, user_answer, try_attempts=try_attempts + 1)
 
 
