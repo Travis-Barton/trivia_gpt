@@ -13,7 +13,7 @@ Never include the answer to a question in the question itself. below are some go
     Answer N: Biscuits and Gravy?
 
     Good Example:
-    Question N: What Southern American dish, often served for breakfast, consists of sausages and a savory sauce over a flaky pastry?
+    Question N: This Southern American dish, often served for breakfast, consists of sausages and a savory sauce over a flaky pastry?
     Answer N: Biscuits and Gravy?
 
     Bad Example:
@@ -21,7 +21,7 @@ Never include the answer to a question in the question itself. below are some go
     Answer N: Decision Tree
 
     Good Example:
-    Question N: What is the name of the supervised learning algorithm that uses an 'arboreal object' to predict the value of a target variable?
+    Question N: Name the supervised learning algorithm that uses an 'arboreal object' to predict the value of a target variable?
     Answer N: Decision Tree
 
 Also, make sure that every answer one has 1, and only 1, correct answer. Never allow multiple answers.
@@ -41,6 +41,33 @@ Also, make sure that every answer one has 1, and only 1, correct answer. Never a
     Good Example:
     Question N: What Giants player was the first to hit over 300 home runs in their career?
     Answer N: Willie Mays
+
+
+Also, make the questions engaging. The questions should have some fun flair:
+
+    Bad Example:
+    Question N: Which celestial body is dubbed the 'Evening Star'?
+    Answer N: Venus
+
+    Good Example:
+    Question N: Shining brightly after sunset, which celestial body is dubbed the 'Evening Star'?
+    Answer N: Venus
+
+    Bad Example:
+    Question N: What city is nicknamed, "The City of Spires"?
+    Answer N: Prague
+
+    Good Example:
+    Question N: In what European city can you famously find a hundred spires and a famous bridge, all while sipping the best Pilsner?
+    Answer N: Prague
+
+    Bad Example:
+    Question N: What is the lightest metal on the periodic table?
+    Answer N: Lithium
+
+    Good Example:
+    Question N: It floats on water, but I wouldnt recommend trying it! This element is the lightest metal on the periodic table.
+    Answer N: Lithium
 
 Also, NEVER repeat answers. If question number 2 has Cisco Systems as the answer, that answer should never appear in future questions.
 Its also important to vary answers accross regions and time. For example, if the category is mythology, don't just pull from Greek and Roman. Use Indian, Chinese, Native American, etc mythology as well.
@@ -90,7 +117,7 @@ Remember, make these questions fun! You can do that by varying the format, varyi
 
 While "what is", "where is", and "who are" are all valid question formats, they are not the only ones. Try to use a variety of question formats.
 
-question formats like, "this person ..." or "This culture is known for..." or "Found in ____, this ____..." or "Name this ____, " are fun and engaging ways to ask questions.
+question formats like, "this person ..." or "This culture is known for..." or "Found in ____", or "this ____..." or "Name this ____, " are fun and engaging ways to ask questions.
 Use them when you can. Again, make engaging content. Jeopardy is fun because of the variety of questions, not because of the answers.
 {context}
 """
