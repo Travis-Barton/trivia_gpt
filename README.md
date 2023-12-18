@@ -1,3 +1,8 @@
+## DB Schema
+
+![DB Schema](./docs/db_schema.png)
+
+
 ## Active todos
 
 1. Show participant scores in a table (winner gets balloons?)
