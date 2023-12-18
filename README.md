@@ -1,6 +1,6 @@
 ## DB Schema
 
-![DB Schema](./docs/db_relationships.png)
+![DB Schema](docs/db_relationships.png)
 
 
 ## Active todos
