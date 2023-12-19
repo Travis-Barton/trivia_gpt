@@ -2,13 +2,11 @@
 
 ## update_answer_score
 
-This function is used to manually update the score of an answer in the database. It is triggered by an HTTP request and takes two parameters: `request` and `context`.
+This function is used to manually update the score of an answer in the database. It is triggered by an HTTP request and takes one parameter: `request`.
 
 ### Parameters:
 
 - `request`: An object that contains data about the HTTP request that triggered the function. This data is expected to be a JSON object with two properties: `user_id` and `answer_id`.
-
-- `context`: An object that contains event metadata. This metadata includes information about the event that triggered the function, such as the event type, the resource the event is associated with, and the time the event occurred.
 
 ### Functionality:
 
@@ -57,8 +55,6 @@ fetch(url, {
 ```
 
 Replace `REGION`, `PROJECT_ID`, `USER_ID`, and `ANSWER_ID` with the actual values.
-
-
 
 # DB Schema
 
