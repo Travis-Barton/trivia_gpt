@@ -266,6 +266,7 @@ def fact_check_question(question, answer, category, try_attempts=0):
         else:
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
 
+
 async def async_fact_check(question, answer, category):
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor() as pool:

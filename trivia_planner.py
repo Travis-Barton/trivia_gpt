@@ -2,15 +2,37 @@ import streamlit as st
 import pandas as pd
 from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses, \
     aquestion_generator, async_fact_check, async_fix_question, async_fix_and_check_question
+from utils.firebase_tools import get_db
+import random as rd
+import string
+import uuid
 from langchain.callbacks import StreamlitCallbackHandler
 import streamlit_survey as ss
 import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
-
+from datetime import datetime
 st.set_page_config(layout="wide",
                    page_title="AI Trivia",
                    page_icon="✍️")
+
+db = get_db()
+
+
+def check_combination_exists(combination):
+    games_ref = db.collection('games')
+    # Query for the specific combination
+    results = games_ref.where('game_id', '==', combination).limit(1).get()
+
+    # If any results are returned, the combination exists
+    return len(results) > 0
+
+
+def generate_game_id():
+    combination = ''.join(rd.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+    if check_combination_exists(combination):
+        return generate_game_id()
+    return combination
 
 
 # @st.cache_data
@@ -86,7 +108,7 @@ def main():
             key='demo'
         )
         st.write('---')
-    question_tab, games_tab, how_to_use = st.tabs(["Questions", "Games", "How to use"])
+    question_tab, new_game, games_tab, how_to_use = st.tabs(["Questions", "Creating Games", "Games", "How to use"])
     with question_tab:
         st.header("Questions")
         with st.sidebar:
@@ -193,6 +215,61 @@ def main():
                     asyncio.run(process_and_update_rows())
                     st.experimental_rerun()
 
+
+    with new_game:
+        with st.sidebar:
+            st.title('Advanced Settings')
+            st.write(
+                '**Note:** These settings are for advanced users only. Please do not change these settings unless you know what you are doing.')
+            st.write(
+                "\n\nThese changes must be made prior to starting the game. Once the game has started, these settings cannot be changed.")
+            show_rational = st.checkbox('Show Rational', value=False)
+            include_answers = st.checkbox('Include Answers', value=False)
+
+        data_upload = st.file_uploader("Upload file", type=["csv"], key='data_upload')
+        if data_upload and st.button('Start Game'):
+            if 'csv' in data_upload.type:
+                df = pd.read_csv(data_upload)
+            elif 'xlsx' in data_upload.type:
+                df = pd.read_excel(data_upload)
+
+            game_id = generate_game_id()
+            questions_ref = db.collection(u'questions')
+            question_ids = []
+            # Iteratively add questions and keep track of their IDs
+            for idx, row in df.iterrows():
+                question_id = str(uuid.uuid4())
+                question_ids.append(question_id)
+                questions_ref.document(question_id).set({
+                    'question': row['question'],
+                    'answer': row['answer'],
+                    'category': row['category'],
+                    'game_id': game_id,
+                    'question_id': question_id,
+                    'revealed': False,
+                    'waiting_screen': False,
+                    'created_at': datetime.now(),
+                    'modified_at': datetime.now(),
+                    # 'correct': False,
+                    'order': idx,
+                })
+
+            # Set up new game
+            game_ref = db.collection(u'games').document(game_id)
+            game_ref.set({
+                'game_id': game_id,
+                'user_ids': [],
+                'question_ids': question_ids,
+                'show_answers': False,
+                'created_at': datetime.now(),
+                'scores': {},
+                'waiting_screen': False,
+                'include_answers': include_answers,
+                'show_rational': show_rational,
+            })
+            st.write(f'Game {game_id} Started')
+
+
     with games_tab:
 
         st.title("Lets Play Trivia!")
@@ -240,6 +317,9 @@ def main():
             with open('how to play.mp4', 'rb') as f:
                 video = f.read()
                 st.video(video)
+
+
+
 
 
 main()
