@@ -268,6 +268,8 @@ def main():
                 'show_rational': show_rational,
             })
             st.write(f'Game {game_id} Started')
+            st.link_button('Open Trivia Master App', url=f'https://trivia-gpt-frontend.vercel.app/trivia-master/game/{game_id}')
+
 
 
     with games_tab:
