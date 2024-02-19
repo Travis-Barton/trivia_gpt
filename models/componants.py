@@ -37,6 +37,7 @@ class Question:
         """
         question_ref = get_db().collection(u'questions').document(question_id)
         question = question_ref.get().to_dict()
+        Question.check_keys(question)
         return Question(
             question=question['question'],
             answer=question['answer'],
@@ -45,9 +46,17 @@ class Question:
             question_id=question['question_id'],
             revealed=question['revealed'],
             created_at=question['created_at'],
-            modified_at=question['modified_at'],
-            order=question['order'],
+            modified_at=question.get('modified_at'),
+            order=question.get('order'),
         )
+
+    @staticmethod
+    def check_keys(question: dict) -> None:
+        keys = ['question', 'answer', 'category', 'game_id', 'question_id', 'revealed', 'created_at', 'modified_at',
+                'order']
+        missing_keys = [key for key in keys if key not in question]
+        if missing_keys:
+            print(f"Warning: The following keys are missing: {', '.join(missing_keys)}")
 
     def write(self):
         """
@@ -261,5 +270,3 @@ class Game:
             user_answers[question.question][user_id] = answer['answer']
 
         return user_answers
-
-
