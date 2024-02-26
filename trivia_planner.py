@@ -46,11 +46,12 @@ def clear_cache():
 
 
 # In your main coroutine
-async def process_rows():
+async def process_rows(use_perplexity=False):
     tasks = []
 
     for i, row in st.session_state.data.iterrows():
-        tasks.append(async_fact_check(row.question, row.answer, row.category))
+        fact_check_model = 'perplexity' if use_perplexity else 'gpt-4'
+        tasks.append(async_fact_check(row.question, row.answer, row.category, fact_check_model))
 
     # Gather results from all tasks
     results = await asyncio.gather(*tasks)
@@ -141,6 +142,7 @@ def main():
             if st.session_state.data.empty:
                 st.session_state.data = pd.read_csv('template.csv')
             cols = st.columns(2)
+            fact_check_model_toggle = st.toggle('Change Fact Check to Perplexity?')
             if st.button("Generate Questions"):
                 with st.status("Preparing data...", expanded=True, state='running') as status:
                     st.write('Generating questions...')
@@ -159,7 +161,7 @@ def main():
                     st.session_state.data = st.session_state.data[['question', 'answer', 'category']]
                     st.session_state.data['fact_check'] = None
                     st.write("Fact checking questions...")
-                    result = asyncio.run(process_rows())
+                    result = asyncio.run(process_rows(fact_check_model_toggle))
                     for i, row in st.session_state.data.iterrows():
                         response_dict = [res for res in result if res['question'] == row.question][0]
                         status.update(label=f"Fact checking questions... {i + 1}/{len(st.session_state.data)}",

@@ -145,6 +145,8 @@ If the question is correct, set fact_check to True, and explanation to "correct"
 
 Always use the search tool just in case the question is correct. If the question is correct, set fact_check to True, and explanation to "correct". If nothing else, use it to cite your sources.
 Avoid potentially controversial questions. If you are unsure, use the search tool to find out if the question is controversial. If it is, set fact_check to False, and explanation to a string explaining why the question is controversial.
+
+Always use JSON format for your response.
 """
 
 human_prompt = """

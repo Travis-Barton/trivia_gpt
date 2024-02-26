@@ -27,6 +27,7 @@ from langchain.schema import SystemMessage
 from concurrent.futures import ThreadPoolExecutor
 from langchain.tools import WikipediaQueryRun
 from langchain.utilities import WikipediaAPIWrapper
+from .perplexity_chat_model import FactChecker
 import os
 import toml
 
@@ -50,7 +51,7 @@ except FileNotFoundError:
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
 os.environ['LANGCHAIN_API_KEY'] = toml_secrets['langsmith_api']['langsmith_api']
-os.environ['LANGCHAIN_PROJECT'] = 'trivia-gpt'
+os.environ['LANGCHAIN_PROJECT'] = toml_secrets["langsmith_api"]["langsmith_project"]
 
 
 class Question(BaseModel):
@@ -162,7 +163,7 @@ def question_generator(categories: List[str], question_count: int = 10, difficul
         return eval(result.split('```python')[1].split("```")[0].strip())
 
 
-def fact_check_question(question, answer, category, try_attempts=0):
+def fact_check_question(question, answer, category, try_attempts=0, model='gpt-4'):
     """
     fact check a question, answer pair
     :param question:
@@ -227,8 +228,13 @@ def fact_check_question(question, answer, category, try_attempts=0):
     }
     try:
         # result = llm_chain.run(question=question, answer=answer, category=category)
-        result = agent_executor.run(input=human_prompt, question=question, answer=answer, category=category,
-                                    verbose=True, tags=['fact_checking'])
+        if model == 'perplexity':
+            result = FactChecker(question, answer, category).check_fact()
+        elif model == 'gpt-4':
+            result = agent_executor.run(input=human_prompt, question=question, answer=answer, category=category,
+                                        verbose=True, tags=['fact_checking'])
+        else:
+            raise NotImplementedError(f"Model {model} is not implemented for Fact checker, please use 'perplexity' or 'gpt-4'")
         # Attempt to directly evaluate the result
         result = result.replace('"fact_check": false,', '"fact_check": False,').replace('"fact_check": true,',
                                                                                         '"fact_check": True,')
@@ -267,10 +273,10 @@ def fact_check_question(question, answer, category, try_attempts=0):
             return fact_check_question(question, answer, category, try_attempts=try_attempts + 1)
 
 
-async def async_fact_check(question, answer, category):
+async def async_fact_check(question, answer, category, model='gpt-4'):
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor() as pool:
-        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category)
+        result = await loop.run_in_executor(pool, fact_check_question, question, answer, category, 0, model)
     return result
 
 
