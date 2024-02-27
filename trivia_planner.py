@@ -180,7 +180,7 @@ def main():
             fact_check_button = st.button("Run AI Fact-Check")
         if fact_check_button:
             with st.status("Fact checking questions...", expanded=True, state='running') as status:
-                result = asyncio.run(process_rows())
+                result = asyncio.run(process_rows(fact_check_model_toggle))
                 for i, row in st.session_state.data.iterrows():
                     response_dict = [res for res in result if res['question'] == row.question][0]
                     status.update(label=f"Fact checking questions... {i + 1}/{len(st.session_state.data)}",
