@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from utils.language_model_tools import fact_check_question, question_generator, fix_question, grade_responses, \
-    aquestion_generator, async_fact_check, async_fix_question, async_fix_and_check_question
+from utils.language_model_tools import (grade_responses, aquestion_generator, async_fact_check,
+                                        async_fix_question, async_fix_and_check_question)
 from utils.firebase_tools import get_db
 import random as rd
 import string
@@ -128,7 +128,7 @@ def main():
             if len(catagories) > 5:
                 st.warning('catagories are currently limited to 5')
                 catagories = catagories[:5]
-            col1, col2, col_3 = st.columns(3)
+            col1, col2, col_3, col_4 = st.columns(4)
             with col1:
                 question_count = st.number_input("Enter number of questions per category", value=4, max_value=10,
                                                  min_value=1, on_change=clear_cache)
@@ -139,6 +139,8 @@ def main():
                 if temperature in ['Slightly Random', 'Vary Random']:
                     st.info('Increasing the randomness will increase the change of wrong answers. Always use the AI fact check to verify these answers.')
                 temperature = 0 if temperature == 'Strict' else 0.8 if temperature == 'Slightly Random' else 1.2
+            with col_4:
+                model_select = st.selectbox("Select Model", ['gpt-4', 'anthropic'])
             if st.session_state.data.empty:
                 st.session_state.data = pd.read_csv('template.csv')
             cols = st.columns(2)

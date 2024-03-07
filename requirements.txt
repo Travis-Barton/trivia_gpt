@@ -3,6 +3,7 @@ pandas
 langchain~=0.0.295
 openai
 toml
+anthropic
 streamlit-survey
 streamlit-authenticator
 streamlit-base-extras

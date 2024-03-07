@@ -8,10 +8,6 @@ from langchain.utilities import BingSearchAPIWrapper
 from typing import List
 import toml
 from langchain.agents import initialize_agent, AgentType, Tool, LLMSingleActionAgent, AgentExecutor, AgentOutputParser
-from langchain.chains import LLMMathChain
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
-from langchain.utilities import SerpAPIWrapper, SQLDatabase
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
@@ -21,7 +17,7 @@ from langchain.chains.openai_functions import (
 )
 import asyncio
 from langchain.schema import AgentAction, AgentFinish
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.agents import tool, OpenAIFunctionsAgent, AgentExecutor
 from langchain.schema import SystemMessage
 from concurrent.futures import ThreadPoolExecutor
@@ -30,6 +26,12 @@ from langchain.utilities import WikipediaAPIWrapper
 from .perplexity_chat_model import FactChecker
 import os
 import toml
+import anthropic
+
+client = anthropic.Anthropic(
+    # defaults to os.environ.get("ANTHROPIC_API_KEY")
+    api_key="my_api_key",
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -82,13 +84,18 @@ def get_prompt(section, value):
 
 
 async def aquestion_generator(categories: List[str], question_count: int = 10, difficulty: str = "Hard", context: str = None,
-                             run_attempts=0, st_status=None, temperature=0) -> Dict[str, List[Dict[str, str]]]:
+                             run_attempts=0, st_status=None, temperature=0, model='gpt-4') -> Dict[str, List[Dict[str, str]]]:
     """
     Uses an OpenAI model to generate a list of questions for each category.
     :param categories:
     :return:
     """
-    llm = ChatOpenAI(temperature=temperature + float(run_attempts)/10, model_name='gpt-4')
+    if model == "gpt-4":
+        llm = ChatOpenAI(temperature=temperature + float(run_attempts)/10, model_name='gpt-4')
+    elif model == "anthropic":
+        llm = ChatAnthropic(temperature=temperature + float(run_attempts)/10, model_name='claude-3-opus-20240229')
+    else:
+        raise NotImplementedError(f"Model {model} is not implemented for question generation, please use 'gpt-4' or 'anthropic'")
     if context:
         context = "Here are some questions and answers that the user would like to be asked. \n```\n" + context + "\n```"
     else:
@@ -112,7 +119,7 @@ async def aquestion_generator(categories: List[str], question_count: int = 10, d
                 raise e
             else:
                 return await aquestion_generator(categories=[category], question_count=question_count, difficulty=difficulty,
-                                                 run_attempts=run_attempts + 1)
+                                                 run_attempts=run_attempts + 1, model=model)
         except:
             result = await llm.apredict(
                 f"turn this into valid JSON so that your response can be parsed with python's `eval` function. {result}. This is a last resort, do NOT include any commentary or any warnings or anything else in this response. There should be no newlines or anything else. JUST the JSON.")
